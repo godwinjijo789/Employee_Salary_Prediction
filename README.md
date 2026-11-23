@@ -1,16 +1,16 @@
-# Employee Salary Prediction & Hidden Pattern Discovery
+# Employee Salary Prediction & Hidden Pattern
 
 A Streamlit analytics dashboard for exploring employee salary data, comparing regression models, and discovering workforce patterns. The dashboard preserves the existing preprocessing and model pipeline while providing a responsive light/dark interface and interactive Plotly visualizations.
 
 ## Dashboard sections
 - A branded **Emp Analysis** masthead with horizontal, icon-based top navigation
 - **Dashboard:** view employee and salary KPIs, department filters, salary charts, and a 3D salary landscape using the configured employee CSV
-- **Exploratory Data Analysis:** department, gender, education, age, and experience filters; salary distributions; workforce charts; correlation heatmap; 3D exploration
-- **Data Preparation:** actual missing-value, duplicate, and IQR outlier checks; fitted encoding details; training/test row counts
-- **Salary Prediction:** Linear Regression, Decision Tree, or Random Forest using the fitted preprocessing pipeline and original feature order
-- **Employee Clusters:** K-Means (default K=2), cluster counts and profiles, silhouette score, salary distributions, and 2D/3D views
+- **Data Explorer:** department, gender, education, age, experience, and salary filters; salary distributions; workforce charts; correlation heatmap; and 3D exploration
+- **Preprocessing:** actual missing-value, duplicate, and IQR outlier checks; fitted encoding details; training/test row counts
+- **Salary Predictor:** Linear Regression, Decision Tree, or Random Forest using the fitted preprocessing pipeline and original feature order
+- **Pattern:** K-Means (fixed at K=2), cluster counts and profiles, silhouette score, salary distributions, and 2D/3D views
 - **Model Evaluation:** actual MAE, MSE, RMSE, R², actual-versus-predicted plot, and residual diagnostics
-- **Business Insights:** data-derived department, education, experience, salary, and cluster comparisons
+- **Smart Insights:** data-derived department, education, experience, salary, and cluster comparisons
 - **About Project:** current-run metrics, workflow, and interpretation limits
 
 The app reports results calculated from the configured employee CSV. It does not substitute sample values for missing data or label clusters as salary tiers without inspecting their measured profiles.

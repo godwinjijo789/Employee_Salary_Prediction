@@ -23,7 +23,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, s
 warnings.filterwarnings("ignore")
 
 st.set_page_config(
-    page_title="Emp Analysis",
+    page_title="SalaryScope",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -155,6 +155,19 @@ st.markdown("""
         border-radius: 0 12px 12px 0;
         background: linear-gradient(90deg, rgba(6,182,212,.12), rgba(37,99,235,.05));
     }
+    .stButton button {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-height: 42px;
+        font-size: 0.78rem;
+        line-height: 1.1;
+    }
+    .stButton button p {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
     @media (max-width: 640px) {
         .brand-masthead { padding: .8rem .9rem; }
         .brand-status { display: none; }
@@ -167,15 +180,20 @@ def money(v):
         return "—"
     return f"₹{v:,.0f}"
 
-def r2_percentage(v):
+def r2_value(v):
     if pd.isna(v):
         return "—"
-    return f"{v * 100:.2f}%"
+    return f"{v:.5f}"
 
-def metric_percentage(v):
+def snapshot_percentage(v):
     if pd.isna(v):
         return "—"
     return f"{v:.2f}%"
+
+def r2_snapshot_percentage(v):
+    if pd.isna(v):
+        return "—"
+    return f"{v * 100:.2f}%"
 
 def normalize_columns(df):
     df = df.copy()
@@ -328,22 +346,22 @@ with st.sidebar.expander("Dataset requirements"):
 
 navigation_pages = [
     "Dashboard",
-    "Exploratory Data Analysis",
-    "Data Preparation",
-    "Salary Prediction",
-    "Employee Clusters",
+    "Data Explorer",
+    "Preprocessing",
+    "Salary Predictor",
+    "Pattern",
     "Model Evaluation",
-    "Business Insights",
+    "Smart Insights",
     "About Project",
 ]
 navigation_labels = {
     "Dashboard": ":material/dashboard: Dashboard",
-    "Exploratory Data Analysis": ":material/query_stats: Explore",
-    "Data Preparation": ":material/rule: Prepare",
-    "Salary Prediction": ":material/payments: Predict",
-    "Employee Clusters": ":material/hub: Clusters",
+    "Data Explorer": ":material/query_stats: Data Explorer",
+    "Preprocessing": ":material/rule: Preprocessing",
+    "Salary Predictor": ":material/payments: Salary Predictor",
+    "Pattern": ":material/hub: Pattern",
     "Model Evaluation": ":material/monitoring: Models",
-    "Business Insights": ":material/lightbulb: Insights",
+    "Smart Insights": ":material/lightbulb: Smart Insights",
     "About Project": ":material/menu_book: About",
 }
 if "active_dashboard_page" not in st.session_state:
@@ -359,23 +377,24 @@ st.markdown(
     '<div class="brand-masthead">'
     '<div class="brand-lockup">'
     '<span class="brand-mark"><span></span><span></span><span></span></span>'
-    '<div><div class="brand-name">Emp Analysis</div>'
+    '<div><div class="brand-name">SalaryScope</div>'
     '<div class="brand-subtitle">People analytics · Salary intelligence</div></div>'
     '</div><div class="brand-status">WORKFORCE INSIGHTS</div></div>',
     unsafe_allow_html=True,
 )
 with st.container(border=True):
-    nav_grid = st.grid("auto", min_column_width=112, gap="small")
+    nav_grid = st.columns(8, gap="small")
     for index, option in enumerate(navigation_pages):
-        nav_grid.button(
-            navigation_labels[option],
-            key=f"top_navigation_{index}",
-            type="primary" if st.session_state["active_dashboard_page"] == option else "secondary",
-            width="stretch",
-            wrap=True,
-            on_click=select_page,
-            args=(option,),
-        )
+        with nav_grid[index]:
+            st.button(
+                navigation_labels[option],
+                key=f"top_navigation_{index}",
+                type="primary" if st.session_state["active_dashboard_page"] == option else "secondary",
+                width="stretch",
+                wrap=False,
+                on_click=select_page,
+                args=(option,),
+            )
 page = st.session_state["active_dashboard_page"]
 
 if not DEFAULT_DATASET_PATH.is_file():
@@ -409,11 +428,11 @@ data_fingerprint = str(int(pd.util.hash_pandas_object(df, index=True).sum()))
 # Model controls and cached-in-session results.
 with st.sidebar.expander("Model settings", expanded=False):
     test_fraction = st.slider("Test data (%)", 10, 40, 20, 5) / 100
-    cluster_k = st.slider("Number of clusters (K)", 2, 8, 2)
     random_state = st.number_input("Random state", min_value=0, max_value=9999, value=42, step=1)
     include_salary_cluster = st.checkbox("Include Salary in clustering", value=True,
         help="When enabled, clustering uses salary as one of the input dimensions, as in your earlier experiment.")
     run_button = st.button("Train / refresh analysis", type="primary", use_container_width=True)
+cluster_k = 2
 
 if "analysis_signature" not in st.session_state:
     st.session_state["analysis_signature"] = None
@@ -485,8 +504,9 @@ if page == "Dashboard":
     kpi_row_two[0].metric(":material/arrow_downward: Minimum salary", money(valid_salary.min()) if len(valid_salary) else "—")
     experience = df["Experience"].dropna()
     kpi_row_two[1].metric(":material/work_history: Average experience", f"{experience.mean():.1f} years" if len(experience) else "—")
-    kpi_row_two[2].metric(":material/apartment: Departments", f"{df['Department'].nunique(dropna=True):,}")
-    kpi_row_two[3].metric(":material/hub: Employee clusters", f"{clustered['Cluster'].nunique():,}")
+    age = df["Age"].dropna()
+    kpi_row_two[2].metric(":material/person: Average age", f"{age.mean():.1f} years" if len(age) else "—")
+    kpi_row_two[3].metric(":material/apartment: Departments", f"{df['Department'].nunique(dropna=True):,}")
     st.subheader("Explore salary patterns")
     if overview_df.empty:
         st.info("Choose at least one department to show overview charts.")
@@ -605,15 +625,15 @@ if page == "Dashboard":
             st.plotly_chart(fig_theme(fig), use_container_width=True)
     st.subheader("Model snapshot")
     snapshot = metrics.sort_values("MAE").copy()
-    snapshot["MAE"] = snapshot["MAE"].map(metric_percentage)
-    snapshot["MSE"] = snapshot["MSE"].map(metric_percentage)
-    snapshot["RMSE"] = snapshot["RMSE"].map(metric_percentage)
-    snapshot["R² Score"] = snapshot["R² Score"].map(r2_percentage)
+    snapshot["MAE"] = snapshot["MAE"].map(snapshot_percentage)
+    snapshot["MSE"] = snapshot["MSE"].map(snapshot_percentage)
+    snapshot["RMSE"] = snapshot["RMSE"].map(snapshot_percentage)
+    snapshot["R² Score"] = snapshot["R² Score"].map(r2_snapshot_percentage)
     st.dataframe(snapshot,
                  use_container_width=True, hide_index=True)
     st.caption(f"Best model by MAE on this run: {best_model_name}. This is a relative comparison, not a guarantee of accurate salary prediction.")
 
-elif page == "Exploratory Data Analysis":
+elif page == "Data Explorer":
     page_header(
         "Exploratory data analysis",
         "Compare salary and workforce patterns with interactive filters and linked visual views.",
@@ -645,6 +665,10 @@ elif page == "Exploratory Data Analysis":
             df["Experience"], "Experience range (years)",
             f"eda_experience_{data_fingerprint}", 0.5,
         )
+    salary_range = numeric_range_slider(
+        df["Salary"], "Salary range (₹)",
+        f"eda_salary_{data_fingerprint}", 1000.0,
+    )
     filtered = df.copy()
     for column, selected in (
         ("Department", selected_departments),
@@ -662,6 +686,11 @@ elif page == "Exploratory Data Analysis":
         filtered = filtered[
             filtered["Experience"].between(*experience_range)
             | filtered["Experience"].isna()
+        ]
+    if salary_range is not None:
+        filtered = filtered[
+            filtered["Salary"].between(*salary_range)
+            | filtered["Salary"].isna()
         ]
     st.caption(
         f"Showing **{len(filtered):,}** of {len(df):,} records. "
@@ -911,7 +940,17 @@ elif page == "Exploratory Data Analysis":
                 st.plotly_chart(fig_theme(fig), use_container_width=True)
 
     with st.expander("Filtered employee records"):
-        st.dataframe(filtered.head(500), use_container_width=True, hide_index=True)
+        table_search = st.text_input("Search employee records", key=f"eda_search_{data_fingerprint}")
+        table_df = filtered
+        if table_search.strip():
+            search = table_search.strip().lower()
+            table_df = filtered[
+                filtered.astype(str).apply(
+                    lambda column: column.str.lower().str.contains(search, regex=False, na=False)
+                ).any(axis=1)
+            ]
+        st.caption(f"{len(table_df):,} matching records")
+        st.dataframe(table_df.head(500), use_container_width=True, hide_index=True)
         st.download_button(
             "Download filtered data (CSV)",
             filtered.to_csv(index=False).encode("utf-8"),
@@ -919,7 +958,7 @@ elif page == "Exploratory Data Analysis":
             "text/csv",
         )
 
-elif page == "Data Preparation":
+elif page == "Preprocessing":
     page_header(
         "Data preparation",
         "Trace the actual input data through quality checks, feature processing, and the model split.",
@@ -942,7 +981,7 @@ elif page == "Data Preparation":
     quality_score = 100 * (1 - missing_cells / max(df.size, 1))
 
     metric_row = st.columns(4)
-    metric_row[0].metric("Uploaded rows", f"{len(df):,}")
+    metric_row[0].metric("Dataset rows", f"{len(df):,}")
     metric_row[1].metric("Rows with usable salary", f"{modeling_rows:,}")
     metric_row[2].metric("Training / test rows", f"{train_rows:,} / {test_rows:,}")
     metric_row[3].metric("Encoded feature columns", f"{transformed_shape[1]:,}")
@@ -1075,7 +1114,7 @@ elif page == "Data Preparation":
     with st.expander("Preview original employee rows"):
         st.dataframe(df.head(20), use_container_width=True, hide_index=True)
 
-elif page == "Salary Prediction":
+elif page == "Salary Predictor":
     page_header("Salary prediction", "Estimate monthly salary with a model trained on the employee dataset.")
     selected_model = st.selectbox("Prediction model", list(models.keys()), index=list(models.keys()).index(best_model_name))
     with st.container(border=True):
@@ -1140,27 +1179,26 @@ elif page == "Salary Prediction":
     st.subheader("Prediction reliability")
     chosen = metrics[metrics["Model"] == selected_model].iloc[0]
     r1,r2,r3 = st.columns(3)
-    r1.metric("Test MAE", metric_percentage(chosen["MAE"]))
-    r2.metric("Test RMSE", metric_percentage(chosen["RMSE"]))
-    r3.metric("Test R²", r2_percentage(chosen["R² Score"]))
+    r1.metric("Test MAE", money(chosen["MAE"]))
+    r2.metric("Test RMSE", money(chosen["RMSE"]))
+    r3.metric("Test R²", r2_value(chosen["R² Score"]))
     if chosen["R² Score"] < 0:
         st.warning("This model has a negative R² score on the current test split. It performed worse than predicting the test-set mean. Treat individual predictions as experimental only.")
     with st.container(border=True):
         st.markdown("**Compare test-set error**")
         error_comparison = metrics.sort_values("MAE")
-        error_comparison["MAE (%)"] = error_comparison["MAE"]
         fig = px.bar(
             error_comparison,
             x="Model",
-            y="MAE (%)",
+            y="MAE",
             color="Model",
-            text_auto=".2f",
-            labels={"MAE (%)": "Mean absolute error (%)"},
+            text_auto=".2s",
+            labels={"MAE": "Mean absolute error (₹)"},
         )
-        fig.update_yaxes(ticksuffix="%")
+        fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
         st.plotly_chart(fig_theme(fig), use_container_width=True)
 
-elif page == "Employee Clusters":
+elif page == "Pattern":
     page_header(
         "Employee cluster analysis",
         "Explore K-Means segments using observed employee profiles, salary distributions, and interactive 3D views.",
@@ -1424,7 +1462,7 @@ elif page == "Employee Clusters":
         "text/csv",
     )
 
-elif page == "Business Insights":
+elif page == "Smart Insights":
     page_header(
         "Business insights",
         "Automatically surface workforce observations from the current employee dataset.",
@@ -1659,13 +1697,13 @@ elif page == "Business Insights":
 
 elif page == "Model Evaluation":
     page_header("Model evaluation", "Evaluate the current train/test results before interpreting salary estimates.")
-    st.caption("Lower MAE / RMSE is better. R² closer to 100% is better; a negative score means the model underperformed a mean-only baseline.")
+    st.caption("Lower MAE / RMSE is better. R² closer to 1 is better; a negative score means the model underperformed a mean-only baseline.")
     metrics_col, error_col = st.columns([1, 1.3])
     with metrics_col.container(border=True):
         st.markdown("**Test-set scorecard**")
         st.dataframe(
             metrics.sort_values("MAE").style.format(
-                {"MAE": lambda value: metric_percentage(value), "MSE": lambda value: metric_percentage(value), "RMSE": lambda value: metric_percentage(value), "R² Score": lambda value: r2_percentage(value)}
+                {"MAE": "₹{:,.2f}", "MSE": "{:,.2f}", "RMSE": "₹{:,.2f}", "R² Score": "{:.5f}"}
             ),
             use_container_width=True,
             hide_index=True,
@@ -1678,36 +1716,33 @@ elif page == "Model Evaluation":
             var_name="Measure",
             value_name="Error",
         )
-        error_metrics["Error (%)"] = error_metrics["Error"]
         fig = px.bar(
             error_metrics,
             x="Model",
-            y="Error (%)",
+            y="Error",
             color="Measure",
             barmode="group",
-            text_auto=".2f",
+            text_auto=".2s",
             color_discrete_map={"MAE": CHART_COLORS[0], "RMSE": CHART_COLORS[1]},
-            labels={"Error (%)": "Error (%)"},
+            labels={"Error": "Error (₹)"},
         )
-        fig.update_yaxes(ticksuffix="%")
+        fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
         st.plotly_chart(fig_theme(fig), use_container_width=True)
     r2_col, diagnostics_col = st.columns([1, 1.35])
     with r2_col.container(border=True):
         st.markdown("**R² compared with baseline**")
         r2_chart = metrics.sort_values("R² Score").copy()
-        r2_chart["R² (%)"] = r2_chart["R² Score"] * 100
         fig = px.bar(
             r2_chart,
-            x="R² (%)",
+            x="R² Score",
             y="Model",
             orientation="h",
-            color="R² (%)",
+            color="R² Score",
             color_continuous_scale=["#EF4444", "#F59E0B", "#10B981"],
-            text_auto=".2f",
-            labels={"R² (%)": "R² score (%)"},
+            text_auto=".5f",
+            labels={"R² Score": "R² score"},
         )
         fig.add_vline(x=0, line_dash="dash", line_color=CHART_COLORS[2], annotation_text="Mean-only baseline")
-        fig.update_xaxes(ticksuffix="%")
         st.plotly_chart(fig_theme(fig), use_container_width=True)
     with diagnostics_col.container(border=True):
         st.markdown("**Prediction diagnostics**")
@@ -1812,10 +1847,10 @@ elif page == "About Project":
         )
         st.dataframe(
             metrics.sort_values("MAE").style.format({
-                "MAE": lambda value: metric_percentage(value),
-                "MSE": lambda value: metric_percentage(value),
-                "RMSE": lambda value: metric_percentage(value),
-                "R² Score": lambda value: r2_percentage(value),
+                "MAE": "₹{:,.2f}",
+                "MSE": "{:,.2f}",
+                "RMSE": "₹{:,.2f}",
+                "R² Score": "{:.5f}",
             }),
             use_container_width=True,
             hide_index=True,
@@ -1823,7 +1858,7 @@ elif page == "About Project":
         negative_scores = metrics[metrics["R² Score"] < 0]
         if not negative_scores.empty:
             negative_labels = ", ".join(
-                f"{row['Model']} ({r2_percentage(row['R² Score'])})"
+                f"{row['Model']} ({r2_value(row['R² Score'])})"
                 for _, row in negative_scores.iterrows()
             )
             st.warning(

@@ -29,8 +29,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-EXPECTED = ["Age", "Experience_Years", "Department", "Education_Level", "Gender", "Monthly_Salary"]
-CATEGORICAL_FEATURES = ["Department", "Education_Level", "Gender"]
+EXPECTED = ["Age", "Experience", "Department", "Education", "Gender", "Salary"]
+CATEGORICAL_FEATURES = ["Department", "Education", "Gender"]
 DEFAULT_DATASET_PATH = Path(__file__).resolve().parent / "data" / "employee_salary_cleaned.csv"
 CHART_COLORS = ["#2563EB", "#06B6D4", "#F59E0B", "#8B5CF6", "#EC4899", "#10B981", "#EF4444", "#6366F1"]
 px.defaults.color_discrete_sequence = CHART_COLORS
@@ -219,7 +219,7 @@ def train_regressors(df, target, features, test_size, random_state):
     if len(work) < 10:
         raise ValueError("At least 10 rows with a valid salary target are needed for model training.")
     if y.nunique() < 2:
-        raise ValueError("Monthly_Salary must contain at least two different numeric values.")
+        raise ValueError("Salary must contain at least two different numeric values.")
     numeric, categorical = get_feature_types(X, features)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state
@@ -323,8 +323,8 @@ def numeric_range_slider(series, label, key, step):
 st.sidebar.caption("Appearance")
 st.sidebar.caption("Choose Light or Dark from the Theme controls in the top-right menu.")
 with st.sidebar.expander("Dataset requirements"):
-    st.caption("Target: Monthly_Salary")
-    st.caption("Features: Age, Experience_Years, Department, Education_Level, Gender")
+    st.caption("Target: Salary")
+    st.caption("Features: Age, Experience, Department, Education, Gender")
 
 navigation_pages = [
     "Dashboard",
@@ -401,7 +401,7 @@ if missing:
     st.stop()
 
 # Numeric coercion for expected numeric fields.
-for col in ["Age", "Experience_Years", "Monthly_Salary"]:
+for col in ["Age", "Experience", "Salary"]:
     df[col] = pd.to_numeric(df[col], errors="coerce")
 
 data_fingerprint = str(int(pd.util.hash_pandas_object(df, index=True).sum()))
@@ -411,7 +411,7 @@ with st.sidebar.expander("Model settings", expanded=False):
     test_fraction = st.slider("Test data (%)", 10, 40, 20, 5) / 100
     cluster_k = st.slider("Number of clusters (K)", 2, 8, 2)
     random_state = st.number_input("Random state", min_value=0, max_value=9999, value=42, step=1)
-    include_salary_cluster = st.checkbox("Include Monthly_Salary in clustering", value=True,
+    include_salary_cluster = st.checkbox("Include Salary in clustering", value=True,
         help="When enabled, clustering uses salary as one of the input dimensions, as in your earlier experiment.")
     run_button = st.button("Train / refresh analysis", type="primary", use_container_width=True)
 
@@ -425,12 +425,12 @@ signature = (
 if run_button or st.session_state.get("analysis_signature") != signature:
     try:
         with st.spinner("Training salary models and discovering employee clusters..."):
-            features = ["Age", "Experience_Years", "Department", "Education_Level", "Gender"]
+            features = ["Age", "Experience", "Department", "Education", "Gender"]
             fitted, metrics, X_test, y_test, preds, modelling_df = train_regressors(
-                df, "Monthly_Salary", features, test_fraction, int(random_state)
+                df, "Salary", features, test_fraction, int(random_state)
             )
-            cluster_features = features + (["Monthly_Salary"] if include_salary_cluster else [])
-            cluster_source = df.dropna(subset=["Age", "Experience_Years"]).copy()
+            cluster_features = features + (["Salary"] if include_salary_cluster else [])
+            cluster_source = df.dropna(subset=["Age", "Experience"]).copy()
             cluster_source = cluster_source.reset_index(drop=True)
             clustered, km, cluster_prep, sil = run_clustering(
                 cluster_source, cluster_features, cluster_k, int(random_state)
@@ -473,8 +473,8 @@ if page == "Dashboard":
         key="overview_salary_view",
     )
     overview_df = df[df["Department"].fillna("Missing").astype(str).isin(selected_departments)]
-    valid_salary = df["Monthly_Salary"].dropna()
-    overview_salary = overview_df["Monthly_Salary"].dropna()
+    valid_salary = df["Salary"].dropna()
+    overview_salary = overview_df["Salary"].dropna()
     st.caption("KPI cards summarize the full employee dataset; the department filter below applies to the charts.")
     kpi_row_one = st.columns(4)
     kpi_row_one[0].metric(":material/groups: Total employees", f"{len(df):,}")
@@ -483,7 +483,7 @@ if page == "Dashboard":
     kpi_row_one[3].metric(":material/arrow_upward: Maximum salary", money(valid_salary.max()) if len(valid_salary) else "—")
     kpi_row_two = st.columns(4)
     kpi_row_two[0].metric(":material/arrow_downward: Minimum salary", money(valid_salary.min()) if len(valid_salary) else "—")
-    experience = df["Experience_Years"].dropna()
+    experience = df["Experience"].dropna()
     kpi_row_two[1].metric(":material/work_history: Average experience", f"{experience.mean():.1f} years" if len(experience) else "—")
     kpi_row_two[2].metric(":material/apartment: Departments", f"{df['Department'].nunique(dropna=True):,}")
     kpi_row_two[3].metric(":material/hub: Employee clusters", f"{clustered['Cluster'].nunique():,}")
@@ -496,12 +496,12 @@ if page == "Dashboard":
             st.markdown(f"**{salary_view}**")
             if salary_view == "Salary distribution":
                 fig = px.histogram(
-                    overview_df.dropna(subset=["Monthly_Salary"]),
-                    x="Monthly_Salary",
+                    overview_df.dropna(subset=["Salary"]),
+                    x="Salary",
                     nbins=30,
                     marginal="violin",
                     color_discrete_sequence=[CHART_COLORS[0]],
-                    labels={"Monthly_Salary": "Monthly salary (₹)"},
+                    labels={"Salary": "Monthly salary (₹)"},
                 )
                 if not overview_salary.empty:
                     fig.add_vline(
@@ -519,38 +519,38 @@ if page == "Dashboard":
                 fig.update_xaxes(tickprefix="₹", tickformat=",.0f")
             elif salary_view == "By department":
                 salary_by_department = (
-                    overview_df.groupby("Department", dropna=False)["Monthly_Salary"]
+                    overview_df.groupby("Department", dropna=False)["Salary"]
                     .mean().reset_index()
-                ).dropna(subset=["Monthly_Salary"]).sort_values("Monthly_Salary")
+                ).dropna(subset=["Salary"]).sort_values("Salary")
                 fig = px.bar(
                     salary_by_department,
-                    x="Monthly_Salary",
+                    x="Salary",
                     y="Department",
                     orientation="h",
-                    color="Monthly_Salary",
+                    color="Salary",
                     color_continuous_scale=["#BAE6FD", "#2563EB", "#0B1B3A"],
                     text_auto=".2s",
-                    labels={"Monthly_Salary": "Average monthly salary (₹)"},
+                    labels={"Salary": "Average monthly salary (₹)"},
                 )
                 fig.update_xaxes(tickprefix="₹", tickformat=",.0f")
             elif salary_view == "By experience":
                 fig = px.scatter(
-                    overview_df.dropna(subset=["Experience_Years", "Monthly_Salary"]),
-                    x="Experience_Years",
-                    y="Monthly_Salary",
+                    overview_df.dropna(subset=["Experience", "Salary"]),
+                    x="Experience",
+                    y="Salary",
                     color="Department",
-                    hover_data=["Age", "Education_Level"],
+                    hover_data=["Age", "Education"],
                     opacity=0.78,
                     render_mode="webgl",
                     labels={
-                        "Experience_Years": "Experience (years)",
-                        "Monthly_Salary": "Monthly salary (₹)",
+                        "Experience": "Experience (years)",
+                        "Salary": "Monthly salary (₹)",
                     },
                 )
                 fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
             else:
                 plot_df = overview_df.dropna(
-                    subset=["Age", "Experience_Years", "Monthly_Salary"]
+                    subset=["Age", "Experience", "Salary"]
                 )
                 if len(plot_df) > 5000:
                     plot_df = plot_df.sample(5000, random_state=42)
@@ -558,15 +558,15 @@ if page == "Dashboard":
                 fig = px.scatter_3d(
                     plot_df,
                     x="Age",
-                    y="Experience_Years",
-                    z="Monthly_Salary",
+                    y="Experience",
+                    z="Salary",
                     color="Department",
-                    hover_data=["Education_Level", "Gender"],
+                    hover_data=["Education", "Gender"],
                     opacity=0.78,
                     labels={
                         "Age": "Age (years)",
-                        "Experience_Years": "Experience (years)",
-                        "Monthly_Salary": "Monthly salary (₹)",
+                        "Experience": "Experience (years)",
+                        "Salary": "Monthly salary (₹)",
                     },
                 )
                 fig.update_traces(marker=dict(size=4))
@@ -620,7 +620,7 @@ elif page == "Exploratory Data Analysis":
     )
     department_options = sorted(df["Department"].fillna("Missing").astype(str).unique().tolist())
     gender_options = sorted(df["Gender"].fillna("Missing").astype(str).unique().tolist())
-    education_options = sorted(df["Education_Level"].fillna("Missing").astype(str).unique().tolist())
+    education_options = sorted(df["Education"].fillna("Missing").astype(str).unique().tolist())
     st.markdown("#### Focus the analysis")
     filter_row_one = st.columns(3)
     selected_departments = filter_row_one[0].multiselect(
@@ -642,14 +642,14 @@ elif page == "Exploratory Data Analysis":
         )
     with filter_row_two[1]:
         experience_range = numeric_range_slider(
-            df["Experience_Years"], "Experience range (years)",
+            df["Experience"], "Experience range (years)",
             f"eda_experience_{data_fingerprint}", 0.5,
         )
     filtered = df.copy()
     for column, selected in (
         ("Department", selected_departments),
         ("Gender", selected_genders),
-        ("Education_Level", selected_education),
+        ("Education", selected_education),
     ):
         filtered = filtered[
             filtered[column].fillna("Missing").astype(str).isin(selected)
@@ -660,8 +660,8 @@ elif page == "Exploratory Data Analysis":
         ]
     if experience_range is not None:
         filtered = filtered[
-            filtered["Experience_Years"].between(*experience_range)
-            | filtered["Experience_Years"].isna()
+            filtered["Experience"].between(*experience_range)
+            | filtered["Experience"].isna()
         ]
     st.caption(
         f"Showing **{len(filtered):,}** of {len(df):,} records. "
@@ -674,7 +674,7 @@ elif page == "Exploratory Data Analysis":
             ["Salary patterns", "Workforce patterns", "3D salary explorer"]
         )
         with compensation_tab:
-            salary_records = filtered.dropna(subset=["Monthly_Salary"]).copy()
+            salary_records = filtered.dropna(subset=["Salary"]).copy()
             histogram_col, salary_box_col = st.columns(2)
             with histogram_col.container(border=True):
                 st.markdown("**Salary distribution**")
@@ -683,11 +683,11 @@ elif page == "Exploratory Data Analysis":
                 else:
                     fig = px.histogram(
                         salary_records,
-                        x="Monthly_Salary",
+                        x="Salary",
                         nbins=30,
                         marginal="violin",
                         color_discrete_sequence=[CHART_COLORS[0]],
-                        labels={"Monthly_Salary": "Monthly salary (₹)"},
+                        labels={"Salary": "Monthly salary (₹)"},
                     )
                     fig.update_xaxes(tickprefix="₹", tickformat=",.0f")
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
@@ -698,10 +698,10 @@ elif page == "Exploratory Data Analysis":
                 else:
                     fig = px.box(
                         salary_records,
-                        y="Monthly_Salary",
+                        y="Salary",
                         points="outliers",
                         color_discrete_sequence=[CHART_COLORS[1]],
-                        labels={"Monthly_Salary": "Monthly salary (₹)"},
+                        labels={"Salary": "Monthly salary (₹)"},
                     )
                     fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
@@ -710,7 +710,7 @@ elif page == "Exploratory Data Analysis":
                 salary_records.assign(
                     Department=salary_records["Department"].fillna("Missing").astype(str)
                 )
-                .groupby("Department", dropna=False)["Monthly_Salary"]
+                .groupby("Department", dropna=False)["Salary"]
                 .agg(Mean="mean", Median="median")
                 .reset_index()
                 .melt(
@@ -741,19 +741,19 @@ elif page == "Exploratory Data Analysis":
             with education_col.container(border=True):
                 st.markdown("**Salary by education level**")
                 education_salary = salary_records.assign(
-                    Education_Level=salary_records["Education_Level"].fillna("Missing").astype(str)
+                    Education=salary_records["Education"].fillna("Missing").astype(str)
                 )
                 if education_salary.empty:
                     st.info("No education-level salary values match these filters.")
                 else:
                     fig = px.box(
                         education_salary,
-                        x="Education_Level",
-                        y="Monthly_Salary",
-                        color="Education_Level",
+                        x="Education",
+                        y="Salary",
+                        color="Education",
                         points="outliers",
                         color_discrete_sequence=CHART_COLORS,
-                        labels={"Monthly_Salary": "Monthly salary (₹)"},
+                        labels={"Salary": "Monthly salary (₹)"},
                     )
                     fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
@@ -768,11 +768,11 @@ elif page == "Exploratory Data Analysis":
                     fig = px.box(
                         gender_salary,
                         x="Gender",
-                        y="Monthly_Salary",
+                        y="Salary",
                         color="Gender",
                         points="outliers",
                         color_discrete_sequence=CHART_COLORS,
-                        labels={"Monthly_Salary": "Monthly salary (₹)"},
+                        labels={"Salary": "Monthly salary (₹)"},
                     )
                     fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
@@ -780,41 +780,41 @@ elif page == "Exploratory Data Analysis":
             age_salary_col, experience_salary_col = st.columns(2)
             with age_salary_col.container(border=True):
                 st.markdown("**Age vs. salary**")
-                age_salary = filtered.dropna(subset=["Age", "Monthly_Salary"])
+                age_salary = filtered.dropna(subset=["Age", "Salary"])
                 if age_salary.empty:
                     st.info("No age and salary pairs match these filters.")
                 else:
                     fig = px.scatter(
                         age_salary,
                         x="Age",
-                        y="Monthly_Salary",
+                        y="Salary",
                         color="Department",
-                        hover_data=["Experience_Years", "Education_Level", "Gender"],
+                        hover_data=["Experience", "Education", "Gender"],
                         opacity=0.78,
                         render_mode="webgl",
-                        labels={"Age": "Age (years)", "Monthly_Salary": "Monthly salary (₹)"},
+                        labels={"Age": "Age (years)", "Salary": "Monthly salary (₹)"},
                     )
                     fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
             with experience_salary_col.container(border=True):
                 st.markdown("**Experience vs. salary**")
                 experience_salary = filtered.dropna(
-                    subset=["Experience_Years", "Monthly_Salary"]
+                    subset=["Experience", "Salary"]
                 )
                 if experience_salary.empty:
                     st.info("No experience and salary pairs match these filters.")
                 else:
                     fig = px.scatter(
                         experience_salary,
-                        x="Experience_Years",
-                        y="Monthly_Salary",
+                        x="Experience",
+                        y="Salary",
                         color="Department",
-                        hover_data=["Age", "Education_Level", "Gender"],
+                        hover_data=["Age", "Education", "Gender"],
                         opacity=0.78,
                         render_mode="webgl",
                         labels={
-                            "Experience_Years": "Experience (years)",
-                            "Monthly_Salary": "Monthly salary (₹)",
+                            "Experience": "Experience (years)",
+                            "Salary": "Monthly salary (₹)",
                         },
                     )
                     fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
@@ -823,18 +823,18 @@ elif page == "Exploratory Data Analysis":
             density_col, department_count_col = st.columns(2)
             with density_col.container(border=True):
                 st.markdown("**Age vs. experience distribution**")
-                age_experience = filtered.dropna(subset=["Age", "Experience_Years"])
+                age_experience = filtered.dropna(subset=["Age", "Experience"])
                 if age_experience.empty:
                     st.info("No age and experience pairs match these filters.")
                 else:
                     fig = px.density_heatmap(
                         age_experience,
                         x="Age",
-                        y="Experience_Years",
+                        y="Experience",
                         nbinsx=20,
                         nbinsy=20,
                         color_continuous_scale=["#DBEAFE", "#2563EB", "#0B1B3A"],
-                        labels={"Age": "Age (years)", "Experience_Years": "Experience (years)"},
+                        labels={"Age": "Age (years)", "Experience": "Experience (years)"},
                     )
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
             with department_count_col.container(border=True):
@@ -858,7 +858,7 @@ elif page == "Exploratory Data Analysis":
 
             with st.container(border=True):
                 st.markdown("**Numeric feature correlation**")
-                numeric_data = filtered[["Age", "Experience_Years", "Monthly_Salary"]]
+                numeric_data = filtered[["Age", "Experience", "Salary"]]
                 numeric_data = numeric_data.dropna(axis=1, how="all")
                 numeric_data = numeric_data.loc[:, numeric_data.nunique(dropna=True) > 1]
                 correlation_data = numeric_data.dropna()
@@ -878,7 +878,7 @@ elif page == "Exploratory Data Analysis":
         with three_d_tab:
             st.markdown("**Rotate, zoom, and hover to inspect the salary landscape.**")
             plot_3d = filtered.dropna(
-                subset=["Age", "Experience_Years", "Monthly_Salary"]
+                subset=["Age", "Experience", "Salary"]
             )
             if len(plot_3d) > 5000:
                 plot_3d = plot_3d.sample(5000, random_state=42)
@@ -889,15 +889,15 @@ elif page == "Exploratory Data Analysis":
                 fig = px.scatter_3d(
                     plot_3d,
                     x="Age",
-                    y="Experience_Years",
-                    z="Monthly_Salary",
+                    y="Experience",
+                    z="Salary",
                     color="Department",
-                    hover_data=["Education_Level", "Gender"],
+                    hover_data=["Education", "Gender"],
                     opacity=0.8,
                     labels={
                         "Age": "Age (years)",
-                        "Experience_Years": "Experience (years)",
-                        "Monthly_Salary": "Monthly salary (₹)",
+                        "Experience": "Experience (years)",
+                        "Salary": "Monthly salary (₹)",
                     },
                 )
                 fig.update_traces(marker=dict(size=4))
@@ -934,7 +934,7 @@ elif page == "Data Preparation":
     }
     numeric_columns = fitted_columns["num"]
     categorical_columns = fitted_columns["cat"]
-    feature_columns = [column for column in EXPECTED if column != "Monthly_Salary"]
+    feature_columns = [column for column in EXPECTED if column != "Salary"]
     transformed_shape = fitted_preprocessor.transform(
         st.session_state["modelling_df"][feature_columns]
     ).shape
@@ -1003,7 +1003,7 @@ elif page == "Data Preparation":
 
     st.subheader("Numerical outlier review")
     outlier_rows = []
-    for column in ["Age", "Experience_Years", "Monthly_Salary"]:
+    for column in ["Age", "Experience", "Salary"]:
         values = df[column].dropna()
         if values.empty:
             outlier_rows.append({
@@ -1063,7 +1063,7 @@ elif page == "Data Preparation":
         st.markdown("**Numerical feature processing**")
         numeric_feature_text = ", ".join(numeric_columns) if numeric_columns else "No numeric features"
         st.write(f"{numeric_feature_text} → median imputation → StandardScaler.")
-        st.write("Monthly_Salary is the prediction target and is not included in the numeric feature scaling.")
+        st.write("Salary is the prediction target and is not included in the numeric feature scaling.")
         st.markdown("**Categorical feature processing**")
         categorical_feature_text = ", ".join(categorical_columns) if categorical_columns else "No categorical features"
         st.write(f"{categorical_feature_text} → most-frequent imputation → one-hot encoding.")
@@ -1086,7 +1086,7 @@ elif page == "Salary Prediction":
             age = x1.number_input("Age", min_value=16, max_value=100, value=30)
             exp = x2.number_input("Experience (years)", min_value=0.0, max_value=80.0, value=5.0, step=0.5)
             dept_opts = sorted(df["Department"].dropna().unique().tolist(), key=str)
-            edu_opts = sorted(df["Education_Level"].dropna().unique().tolist(), key=str)
+            edu_opts = sorted(df["Education"].dropna().unique().tolist(), key=str)
             gender_opts = sorted(df["Gender"].dropna().unique().tolist(), key=str)
             department = x3.selectbox("Department", dept_opts)
             x4,x5 = st.columns(2)
@@ -1095,8 +1095,8 @@ elif page == "Salary Prediction":
             submitted = st.form_submit_button("Estimate salary", type="primary", use_container_width=True)
     if submitted:
         sample = pd.DataFrame([{
-            "Age": age, "Experience_Years": exp, "Department": department,
-            "Education_Level": education, "Gender": gender
+            "Age": age, "Experience": exp, "Department": department,
+            "Education": education, "Gender": gender
         }])
         value = float(models[selected_model].predict(sample)[0])
         with st.container(border=True):
@@ -1119,13 +1119,13 @@ elif page == "Salary Prediction":
                 f"{selected_model} estimate for the selected profile. This is exploratory, "
                 "not an official salary recommendation."
             )
-            salary_data = df["Monthly_Salary"].dropna()
+            salary_data = df["Salary"].dropna()
             fig = px.histogram(
                 salary_data,
-                x="Monthly_Salary",
+                x="Salary",
                 nbins=28,
                 color_discrete_sequence=[CHART_COLORS[0]],
-                labels={"Monthly_Salary": "Monthly salary (₹)"},
+                labels={"Salary": "Monthly salary (₹)"},
             )
             fig.add_vline(
                 x=value,
@@ -1178,7 +1178,7 @@ elif page == "Employee Clusters":
             "The silhouette score suggests weak separation. Treat these groups as exploratory "
             "patterns rather than naturally distinct employee categories."
         )
-    if "Monthly_Salary" not in st.session_state["cluster_features"]:
+    if "Salary" not in st.session_state["cluster_features"]:
         st.info("Monthly salary is not an input to this clustering run; it is shown only for profile comparison.")
     else:
         st.caption("Monthly salary is included as a clustering input for this run.")
@@ -1215,7 +1215,7 @@ elif page == "Employee Clusters":
         )
         if map_view == "3D salary landscape":
             cluster_plot = cluster_plot.dropna(
-                subset=["Age", "Experience_Years", "Monthly_Salary"]
+                subset=["Age", "Experience", "Salary"]
             )
             if len(cluster_plot) > 5000:
                 cluster_plot = cluster_plot.sample(5000, random_state=42)
@@ -1226,16 +1226,16 @@ elif page == "Employee Clusters":
                 fig = px.scatter_3d(
                     cluster_plot,
                     x="Age",
-                    y="Experience_Years",
-                    z="Monthly_Salary",
+                    y="Experience",
+                    z="Salary",
                     color="Cluster label",
-                    hover_data=["Department", "Education_Level", "Gender"],
+                    hover_data=["Department", "Education", "Gender"],
                     opacity=0.78,
                     color_discrete_sequence=CHART_COLORS,
                     labels={
                         "Age": "Age (years)",
-                        "Experience_Years": "Experience (years)",
-                        "Monthly_Salary": "Monthly salary (₹)",
+                        "Experience": "Experience (years)",
+                        "Salary": "Monthly salary (₹)",
                     },
                 )
                 fig.update_traces(marker=dict(size=4))
@@ -1246,23 +1246,23 @@ elif page == "Employee Clusters":
                 ))
                 st.plotly_chart(fig_theme(fig), use_container_width=True)
         else:
-            cluster_plot = cluster_plot.dropna(subset=["Age", "Experience_Years"])
+            cluster_plot = cluster_plot.dropna(subset=["Age", "Experience"])
             if cluster_plot.empty:
                 st.info("No complete age and experience records are available for the 2D map.")
             else:
                 fig = px.scatter(
                     cluster_plot,
                     x="Age",
-                    y="Experience_Years",
+                    y="Experience",
                     color="Cluster label",
-                    hover_data=["Monthly_Salary", "Department", "Education_Level", "Gender"],
+                    hover_data=["Salary", "Department", "Education", "Gender"],
                     opacity=0.78,
                     render_mode="webgl",
                     color_discrete_sequence=CHART_COLORS,
                     labels={
                         "color": "Cluster",
                         "Age": "Age (years)",
-                        "Experience_Years": "Experience (years)",
+                        "Experience": "Experience (years)",
                     },
                 )
                 st.plotly_chart(fig_theme(fig), use_container_width=True)
@@ -1271,10 +1271,10 @@ elif page == "Employee Clusters":
         Employees=("Cluster", "size"),
         Mean_age=("Age", "mean"),
         Median_age=("Age", "median"),
-        Mean_experience=("Experience_Years", "mean"),
-        Median_experience=("Experience_Years", "median"),
-        Mean_salary=("Monthly_Salary", "mean"),
-        Median_salary=("Monthly_Salary", "median"),
+        Mean_experience=("Experience", "mean"),
+        Median_experience=("Experience", "median"),
+        Mean_salary=("Salary", "mean"),
+        Median_salary=("Salary", "median"),
     ).reset_index()
     profile_display = profile.rename(columns={
         "Cluster": "Cluster label",
@@ -1302,7 +1302,7 @@ elif page == "Employee Clusters":
         )
     with salary_plot_col.container(border=True):
         st.markdown("**Salary distribution by cluster**")
-        salary_profile = clustered.dropna(subset=["Monthly_Salary"]).copy()
+        salary_profile = clustered.dropna(subset=["Salary"]).copy()
         salary_profile["Cluster label"] = salary_profile["Cluster"].map(
             lambda value: f"Cluster {value}"
         )
@@ -1312,19 +1312,19 @@ elif page == "Employee Clusters":
             fig = px.violin(
                 salary_profile,
                 x="Cluster label",
-                y="Monthly_Salary",
+                y="Salary",
                 color="Cluster label",
                 box=True,
                 points="outliers",
                 color_discrete_sequence=CHART_COLORS,
-                labels={"Monthly_Salary": "Monthly salary (₹)"},
+                labels={"Salary": "Monthly salary (₹)"},
             )
             fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
             st.plotly_chart(fig_theme(fig), use_container_width=True)
     st.markdown("**Observed cluster characteristics**")
     category_descriptions = {
         "Department": "most common department",
-        "Education_Level": "most common education level",
+        "Education": "most common education level",
         "Gender": "most common gender",
     }
     for _, row in profile.iterrows():
@@ -1386,11 +1386,11 @@ elif page == "Employee Clusters":
         st.markdown("**Choose a profile distribution**")
         profile_metric = st.selectbox(
             "Profile field",
-            ["Age", "Experience_Years", "Monthly_Salary"],
+            ["Age", "Experience", "Salary"],
             format_func=lambda value: {
                 "Age": "Age",
-                "Experience_Years": "Experience",
-                "Monthly_Salary": "Monthly salary",
+                "Experience": "Experience",
+                "Salary": "Monthly salary",
             }[value],
             key="cluster_profile_metric",
         )
@@ -1410,11 +1410,11 @@ elif page == "Employee Clusters":
                 color_discrete_sequence=CHART_COLORS,
                 labels={
                     profile_metric: "Monthly salary (₹)"
-                    if profile_metric == "Monthly_Salary"
+                    if profile_metric == "Salary"
                     else profile_metric.replace("_", " "),
                 },
             )
-            if profile_metric == "Monthly_Salary":
+            if profile_metric == "Salary":
                 fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
             st.plotly_chart(fig_theme(fig), use_container_width=True)
     st.download_button(
@@ -1436,9 +1436,9 @@ elif page == "Business Insights":
         department_data.groupby("Department", dropna=False)
         .agg(
             Employees=("Department", "size"),
-            Salary_records=("Monthly_Salary", "count"),
-            Mean_salary=("Monthly_Salary", "mean"),
-            Median_salary=("Monthly_Salary", "median"),
+            Salary_records=("Salary", "count"),
+            Mean_salary=("Salary", "mean"),
+            Median_salary=("Salary", "median"),
         )
         .reset_index()
     )
@@ -1455,15 +1455,15 @@ elif page == "Business Insights":
         if not valid_department_salary.empty else None
     )
 
-    experience_salary = df.dropna(subset=["Experience_Years", "Monthly_Salary"])
+    experience_salary = df.dropna(subset=["Experience", "Salary"])
     experience_correlation = None
     if (
         len(experience_salary) > 1
-        and experience_salary["Experience_Years"].nunique() > 1
-        and experience_salary["Monthly_Salary"].nunique() > 1
+        and experience_salary["Experience"].nunique() > 1
+        and experience_salary["Salary"].nunique() > 1
     ):
         experience_correlation = float(
-            experience_salary["Experience_Years"].corr(experience_salary["Monthly_Salary"])
+            experience_salary["Experience"].corr(experience_salary["Salary"])
         )
         if not np.isfinite(experience_correlation):
             experience_correlation = None
@@ -1549,8 +1549,8 @@ elif page == "Business Insights":
     with education_chart_col.container(border=True):
         st.markdown("**Salary differences by education level**")
         education_summary = (
-            df.assign(Education_Level=df["Education_Level"].fillna("Missing").astype(str))
-            .groupby("Education_Level", dropna=False)["Monthly_Salary"]
+            df.assign(Education=df["Education"].fillna("Missing").astype(str))
+            .groupby("Education", dropna=False)["Salary"]
             .agg(Employees="count", Mean_salary="mean", Median_salary="median")
             .reset_index()
             .dropna(subset=["Mean_salary"])
@@ -1562,7 +1562,7 @@ elif page == "Business Insights":
             fig = px.bar(
                 education_summary,
                 x="Mean_salary",
-                y="Education_Level",
+                y="Education",
                 orientation="h",
                 color="Mean_salary",
                 color_continuous_scale=["#BAE6FD", "#2563EB", "#0B1B3A"],
@@ -1575,8 +1575,8 @@ elif page == "Business Insights":
             high_education = education_summary.iloc[-1]
             low_education = education_summary.iloc[0]
             st.caption(
-                f"Observed means range from {low_education['Education_Level']} "
-                f"({money(low_education['Mean_salary'])}) to {high_education['Education_Level']} "
+                f"Observed means range from {low_education['Education']} "
+                f"({money(low_education['Mean_salary'])}) to {high_education['Education']} "
                 f"({money(high_education['Mean_salary'])})."
             )
 
@@ -1590,29 +1590,29 @@ elif page == "Business Insights":
             st.caption("Showing a deterministic 5,000-record sample in the scatter plot; correlation uses all complete records.")
         fig = px.scatter(
             plot_experience,
-            x="Experience_Years",
-            y="Monthly_Salary",
+            x="Experience",
+            y="Salary",
             color="Department",
-            hover_data=["Age", "Education_Level", "Gender"],
+            hover_data=["Age", "Education", "Gender"],
             opacity=0.78,
             render_mode="webgl",
             labels={
-                "Experience_Years": "Experience (years)",
-                "Monthly_Salary": "Monthly salary (₹)",
+                "Experience": "Experience (years)",
+                "Salary": "Monthly salary (₹)",
             },
         )
         if (
-            experience_salary["Experience_Years"].nunique() > 1
-            and experience_salary["Monthly_Salary"].nunique() > 1
+            experience_salary["Experience"].nunique() > 1
+            and experience_salary["Salary"].nunique() > 1
         ):
             slope, intercept = np.polyfit(
-                experience_salary["Experience_Years"],
-                experience_salary["Monthly_Salary"],
+                experience_salary["Experience"],
+                experience_salary["Salary"],
                 1,
             )
             x_values = np.linspace(
-                experience_salary["Experience_Years"].min(),
-                experience_salary["Experience_Years"].max(),
+                experience_salary["Experience"].min(),
+                experience_salary["Experience"].max(),
                 100,
             )
             fig.add_trace(go.Scatter(
@@ -1629,9 +1629,9 @@ elif page == "Business Insights":
     cluster_summary = clustered.groupby("Cluster").agg(
         Employees=("Cluster", "size"),
         Mean_age=("Age", "mean"),
-        Mean_experience=("Experience_Years", "mean"),
-        Mean_salary=("Monthly_Salary", "mean"),
-        Median_salary=("Monthly_Salary", "median"),
+        Mean_experience=("Experience", "mean"),
+        Mean_salary=("Salary", "mean"),
+        Median_salary=("Salary", "median"),
     ).reset_index()
     if cluster_summary.empty:
         st.info("No cluster profiles are available.")

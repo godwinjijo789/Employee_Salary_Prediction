@@ -18,13 +18,13 @@ The app reports results calculated from the configured employee CSV. It does not
 ## Required columns
 The employee CSV must contain these exact column names:
 - `Age`
-- `Experience_Years`
+- `Experience`
 - `Department`
-- `Education_Level`
+- `Education`
 - `Gender`
-- `Monthly_Salary`
+- `Salary`
 
-`Monthly_Salary` is the regression target. The other five columns are used as prediction features.
+`Salary` is the regression target. The other five columns are used as prediction features.
 The app expects age, experience, and salary to be numeric. Currency symbols and text inside the salary column should be cleaned before use. Department, education, and gender should contain categorical labels. The existing pipeline uses pandas column types to distinguish numeric from categorical features; convert numeric-coded category columns to text before running the app if they should be one-hot encoded.
 
 ## Install and run (Windows 11 / VS Code)

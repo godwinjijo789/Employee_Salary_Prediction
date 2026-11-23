@@ -31,6 +31,7 @@ st.set_page_config(
 
 EXPECTED = ["Age", "Experience_Years", "Department", "Education_Level", "Gender", "Monthly_Salary"]
 CATEGORICAL_FEATURES = ["Department", "Education_Level", "Gender"]
+DEFAULT_DATASET_PATH = Path(__file__).resolve().parent / "data" / "employee_salary_cleaned.csv"
 CHART_COLORS = ["#2563EB", "#06B6D4", "#F59E0B", "#8B5CF6", "#EC4899", "#10B981", "#EF4444", "#6366F1"]
 px.defaults.color_discrete_sequence = CHART_COLORS
 
@@ -166,99 +167,31 @@ def money(v):
         return "—"
     return f"₹{v:,.0f}"
 
-def read_data(file):
-    if file is None:
-        return None
-    name = file.name.lower()
-    if name.endswith(".csv"):
-        return pd.read_csv(file)
-    if name.endswith((".xlsx", ".xls")):
-        return pd.read_excel(file)
-    raise ValueError("Upload a CSV or Excel file.")
+def r2_percentage(v):
+    if pd.isna(v):
+        return "—"
+    return f"{v * 100:.2f}%"
+
+def metric_percentage(v):
+    if pd.isna(v):
+        return "—"
+    return f"{v:.2f}%"
 
 def normalize_columns(df):
     df = df.copy()
     df.columns = [str(c).strip() for c in df.columns]
     return df
 
+@st.cache_data(show_spinner="Loading employee dataset...")
+def load_default_dataset(path, modified_at_ns):
+    return normalize_columns(pd.read_csv(path))
+
 def validate_dataset(df):
     missing = [c for c in EXPECTED if c not in df.columns]
     return missing
 
-def clear_dataset():
-    for key in (
-        "raw_df",
-        "uploaded_name",
-        "analysis_signature",
-        "models",
-        "metrics",
-        "X_test",
-        "y_test",
-        "preds",
-        "modelling_df",
-        "clustered",
-        "cluster_model",
-        "cluster_preprocessor",
-        "silhouette",
-        "cluster_features",
-        "overview_departments",
-        "overview_salary_view",
-        "department_analysis_filter",
-        "eda_departments",
-        "eda_genders",
-        "eda_education",
-    ):
-        st.session_state.pop(key, None)
-    for key in list(st.session_state):
-        if key.startswith((
-            "overview_departments_",
-            "eda_departments_",
-            "eda_genders_",
-            "eda_education_",
-            "eda_age_",
-            "eda_experience_",
-        )):
-            st.session_state.pop(key, None)
-    st.session_state["upload_version"] = st.session_state.get("upload_version", 0) + 1
-
 def select_page(page_name):
     st.session_state["active_dashboard_page"] = page_name
-
-def render_dataset_uploader():
-    with st.container(border=True):
-        upload_col, dataset_col = st.columns([3, 1], vertical_alignment="center")
-        with upload_col:
-            st.markdown("#### :material/cloud_upload: Upload employee dataset")
-            st.caption("Add a CSV or Excel file to populate salary and workforce analytics.")
-            uploaded = st.file_uploader(
-                "Choose a CSV or Excel file",
-                type=["csv", "xlsx", "xls"],
-                key=f"employee_upload_{st.session_state['upload_version']}",
-            )
-        with dataset_col:
-            if st.session_state.get("raw_df") is not None:
-                st.badge("Dataset loaded", icon=":material/check_circle:", color="green")
-                st.caption(st.session_state.get("uploaded_name", "Uploaded dataset"))
-                st.button(
-                    "Clear dataset",
-                    on_click=clear_dataset,
-                    use_container_width=True,
-                    key="clear_dataset_button",
-                )
-            else:
-                st.badge("Ready for data", icon=":material/upload_file:", color="blue")
-                st.caption("CSV · XLSX · XLS")
-
-    if uploaded is not None:
-        try:
-            data = normalize_columns(read_data(uploaded))
-        except Exception as e:
-            st.error(f"Could not read file: {e}")
-        else:
-            st.session_state["raw_df"] = data
-            st.session_state["uploaded_name"] = uploaded.name
-            st.session_state["upload_version"] += 1
-            st.rerun()
 
 def get_feature_types(df, features):
     numeric = [c for c in features if pd.api.types.is_numeric_dtype(df[c])]
@@ -387,7 +320,6 @@ def numeric_range_slider(series, label, key, step):
     )
 
 # ---------- Sidebar ----------
-st.session_state.setdefault("upload_version", 0)
 st.sidebar.caption("Appearance")
 st.sidebar.caption("Choose Light or Dark from the Theme controls in the top-right menu.")
 with st.sidebar.expander("Dataset requirements"):
@@ -446,73 +378,26 @@ with st.container(border=True):
         )
 page = st.session_state["active_dashboard_page"]
 
-df = st.session_state.get("raw_df")
-if df is not None and page == "Dashboard":
-    render_dataset_uploader()
-    df = st.session_state.get("raw_df")
-
-if df is None:
-    if page == "Dashboard":
-        page_header(
-            "Dashboard",
-            "Explore workforce data, salary patterns, and model performance in one place.",
-            "PEOPLE ANALYTICS  /  SALARY INTELLIGENCE",
-        )
-        st.info("Upload a dataset above to activate your analytics dashboard.")
-
-        st.subheader("Your analytics workspace")
-        c1, c2, c3 = st.columns(3)
-        c1.markdown(
-            '<div class="feature-card"><div class="feature-card__number">01 / EXPLORE</div>'
-            '<h3>Get to know the data</h3><p>Check records, missing values, and salary distributions.</p></div>',
-            unsafe_allow_html=True,
-        )
-        c2.markdown(
-            '<div class="feature-card"><div class="feature-card__number">02 / PREDICT</div>'
-            '<h3>Estimate monthly pay</h3><p>Compare three models and inspect their test performance.</p></div>',
-            unsafe_allow_html=True,
-        )
-        c3.markdown(
-            '<div class="feature-card"><div class="feature-card__number">03 / DISCOVER</div>'
-            '<h3>Find workforce patterns</h3><p>Segment employees and compare group profiles.</p></div>',
-            unsafe_allow_html=True,
-        )
-        st.space("medium")
-        render_dataset_uploader()
-    else:
-        page_descriptions = {
-            "Exploratory Data Analysis": "Interactive salary and workforce charts with department, gender, education, age, and experience filters.",
-            "Data Preparation": "Missing values, duplicates, outlier checks, feature transformations, and the actual train/test split.",
-            "Salary Prediction": "Estimate monthly salary with one of the trained regression models.",
-            "Employee Clusters": "Inspect K-Means groups, employee profiles, silhouette score, and 2D/3D views.",
-            "Model Evaluation": "Review actual MAE, MSE, RMSE, R², and prediction residuals.",
-            "Business Insights": "Discover salary and workforce patterns calculated from your uploaded records.",
-            "About Project": "Review the project's modeling workflow and interpretation guidance.",
-        }
-        page_header(page, page_descriptions[page], "UPLOAD DATA TO CONTINUE")
-        st.info(
-            f"Upload a CSV or Excel file from the Dashboard to open **{page}** with your data."
-        )
-        with st.container(border=True):
-            st.markdown("**Required next step**")
-            st.write(
-                "Choose a file from the Dashboard containing the required employee columns. This section will "
-                "show results from that upload; no sample metrics or insights are substituted."
-            )
-            st.button(
-                "Go to Dashboard",
-                key="empty_state_overview",
-                on_click=select_page,
-                args=("Dashboard",),
-            )
-
+if not DEFAULT_DATASET_PATH.is_file():
+    st.error(f"Employee dataset not found: `{DEFAULT_DATASET_PATH}`.")
     st.stop()
+
+try:
+    df = load_default_dataset(
+        str(DEFAULT_DATASET_PATH),
+        DEFAULT_DATASET_PATH.stat().st_mtime_ns,
+    )
+except (OSError, UnicodeError, pd.errors.ParserError, pd.errors.EmptyDataError, ValueError) as e:
+    st.error(f"Could not load employee dataset `{DEFAULT_DATASET_PATH}`: {e}")
+    st.stop()
+
+st.session_state["raw_df"] = df
 
 missing = validate_dataset(df)
 if missing:
-    st.error("The uploaded file is missing required columns: " + ", ".join(missing))
+    st.error("The employee dataset is missing required columns: " + ", ".join(missing))
     st.write("Available columns:", list(df.columns))
-    st.warning("Please correct the column names or upload the original project dataset.")
+    st.warning(f"Check the column names in `{DEFAULT_DATASET_PATH}`.")
     st.stop()
 
 # Numeric coercion for expected numeric fields.
@@ -572,7 +457,7 @@ if page == "Dashboard":
     page_header(
         "Workforce dashboard",
         "A live snapshot of salary, team composition, and model performance.",
-        f"DASHBOARD  /  {st.session_state.get('uploaded_name', 'UPLOADED DATASET')}",
+        f"DASHBOARD  /  {DEFAULT_DATASET_PATH.name}",
     )
     department_options = sorted(df["Department"].fillna("Missing").astype(str).unique().tolist())
     filter_col, view_col = st.columns([1.5, 1])
@@ -590,7 +475,7 @@ if page == "Dashboard":
     overview_df = df[df["Department"].fillna("Missing").astype(str).isin(selected_departments)]
     valid_salary = df["Monthly_Salary"].dropna()
     overview_salary = overview_df["Monthly_Salary"].dropna()
-    st.caption("KPI cards summarize the full uploaded dataset; the department filter below applies to the charts.")
+    st.caption("KPI cards summarize the full employee dataset; the department filter below applies to the charts.")
     kpi_row_one = st.columns(4)
     kpi_row_one[0].metric(":material/groups: Total employees", f"{len(df):,}")
     kpi_row_one[1].metric(":material/payments: Average salary", money(valid_salary.mean()) if len(valid_salary) else "—")
@@ -720,10 +605,10 @@ if page == "Dashboard":
             st.plotly_chart(fig_theme(fig), use_container_width=True)
     st.subheader("Model snapshot")
     snapshot = metrics.sort_values("MAE").copy()
-    snapshot["MAE"] = snapshot["MAE"].map(money)
-    snapshot["MSE"] = snapshot["MSE"].map(lambda value: f"{value:,.0f}")
-    snapshot["RMSE"] = snapshot["RMSE"].map(money)
-    snapshot["R² Score"] = snapshot["R² Score"].map(lambda value: f"{value:.3f}")
+    snapshot["MAE"] = snapshot["MAE"].map(metric_percentage)
+    snapshot["MSE"] = snapshot["MSE"].map(metric_percentage)
+    snapshot["RMSE"] = snapshot["RMSE"].map(metric_percentage)
+    snapshot["R² Score"] = snapshot["R² Score"].map(r2_percentage)
     st.dataframe(snapshot,
                  use_container_width=True, hide_index=True)
     st.caption(f"Best model by MAE on this run: {best_model_name}. This is a relative comparison, not a guarantee of accurate salary prediction.")
@@ -1069,7 +954,7 @@ elif page == "Data Preparation":
     st.subheader("Preprocessing workflow")
     workflow = st.columns(4)
     workflow_cards = [
-        ("01", "Inspect", "Original uploaded rows, missing fields, and exact duplicate count."),
+        ("01", "Inspect", "Original employee rows, missing fields, and exact duplicate count."),
         ("02", "Split", f"{train_rows:,} training rows and {test_rows:,} held-out test rows."),
         ("03", "Transform", "Numeric features: median imputation and standard scaling. Categorical features: most-frequent imputation and one-hot encoding."),
         ("04", "Fit", "Each model fits its own preprocessing pipeline on training data; unknown categories are ignored at prediction time."),
@@ -1081,7 +966,7 @@ elif page == "Data Preparation":
             unsafe_allow_html=True,
         )
     st.caption(
-        "This view reports the current uploaded dataset and fitted pipeline. Duplicate and IQR-flagged rows "
+        "This view reports the current employee dataset and fitted pipeline. Duplicate and IQR-flagged rows "
         "are measured for review; the existing training pipeline does not automatically delete them."
     )
 
@@ -1094,7 +979,7 @@ elif page == "Data Preparation":
     with missing_col.container(border=True):
         st.markdown("**Missing values before model preprocessing**")
         if missing_cells == 0:
-            st.success("No missing cells found in the uploaded dataset.")
+            st.success("No missing cells found in the employee dataset.")
         else:
             fig = px.bar(
                 missing_by_column[missing_by_column["Missing values"] > 0],
@@ -1187,11 +1072,11 @@ elif page == "Data Preparation":
         st.markdown("**One-hot categories learned from training data**")
         st.dataframe(category_summary, use_container_width=True, hide_index=True)
 
-    with st.expander("Preview original uploaded rows"):
+    with st.expander("Preview original employee rows"):
         st.dataframe(df.head(20), use_container_width=True, hide_index=True)
 
 elif page == "Salary Prediction":
-    page_header("Salary prediction", "Estimate monthly salary with a model trained on the uploaded employee dataset.")
+    page_header("Salary prediction", "Estimate monthly salary with a model trained on the employee dataset.")
     selected_model = st.selectbox("Prediction model", list(models.keys()), index=list(models.keys()).index(best_model_name))
     with st.container(border=True):
         st.markdown("**Build an employee profile**")
@@ -1255,23 +1140,24 @@ elif page == "Salary Prediction":
     st.subheader("Prediction reliability")
     chosen = metrics[metrics["Model"] == selected_model].iloc[0]
     r1,r2,r3 = st.columns(3)
-    r1.metric("Test MAE", money(chosen["MAE"]))
-    r2.metric("Test RMSE", money(chosen["RMSE"]))
-    r3.metric("Test R²", f"{chosen['R² Score']:.4f}")
+    r1.metric("Test MAE", metric_percentage(chosen["MAE"]))
+    r2.metric("Test RMSE", metric_percentage(chosen["RMSE"]))
+    r3.metric("Test R²", r2_percentage(chosen["R² Score"]))
     if chosen["R² Score"] < 0:
         st.warning("This model has a negative R² score on the current test split. It performed worse than predicting the test-set mean. Treat individual predictions as experimental only.")
     with st.container(border=True):
         st.markdown("**Compare test-set error**")
         error_comparison = metrics.sort_values("MAE")
+        error_comparison["MAE (%)"] = error_comparison["MAE"]
         fig = px.bar(
             error_comparison,
             x="Model",
-            y="MAE",
+            y="MAE (%)",
             color="Model",
-            text_auto=".2s",
-            labels={"MAE": "Mean absolute error (₹)"},
+            text_auto=".2f",
+            labels={"MAE (%)": "Mean absolute error (%)"},
         )
-        fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
+        fig.update_yaxes(ticksuffix="%")
         st.plotly_chart(fig_theme(fig), use_container_width=True)
 
 elif page == "Employee Clusters":
@@ -1541,7 +1427,7 @@ elif page == "Employee Clusters":
 elif page == "Business Insights":
     page_header(
         "Business insights",
-        "Automatically surface workforce observations from the current uploaded dataset.",
+        "Automatically surface workforce observations from the current employee dataset.",
     )
     department_data = df.assign(
         Department=df["Department"].fillna("Missing").astype(str)
@@ -1630,7 +1516,7 @@ elif page == "Business Insights":
         st.subheader("Highlights from this dataset")
         for insight in generated_insights:
             st.markdown(f"- {insight}")
-    st.caption("These are descriptive statistics for the uploaded records; association does not establish causation.")
+    st.caption("These are descriptive statistics for employee records; association does not establish causation.")
 
     department_chart_col, education_chart_col = st.columns(2)
     with department_chart_col.container(border=True):
@@ -1773,13 +1659,13 @@ elif page == "Business Insights":
 
 elif page == "Model Evaluation":
     page_header("Model evaluation", "Evaluate the current train/test results before interpreting salary estimates.")
-    st.caption("Lower MAE / RMSE is better. R² closer to 1 is better; a negative score means the model underperformed a mean-only baseline.")
+    st.caption("Lower MAE / RMSE is better. R² closer to 100% is better; a negative score means the model underperformed a mean-only baseline.")
     metrics_col, error_col = st.columns([1, 1.3])
     with metrics_col.container(border=True):
         st.markdown("**Test-set scorecard**")
         st.dataframe(
             metrics.sort_values("MAE").style.format(
-                {"MAE": "₹{:,.0f}", "MSE": "{:,.0f}", "RMSE": "₹{:,.0f}", "R² Score": "{:.3f}"}
+                {"MAE": lambda value: metric_percentage(value), "MSE": lambda value: metric_percentage(value), "RMSE": lambda value: metric_percentage(value), "R² Score": lambda value: r2_percentage(value)}
             ),
             use_container_width=True,
             hide_index=True,
@@ -1792,32 +1678,36 @@ elif page == "Model Evaluation":
             var_name="Measure",
             value_name="Error",
         )
+        error_metrics["Error (%)"] = error_metrics["Error"]
         fig = px.bar(
             error_metrics,
             x="Model",
-            y="Error",
+            y="Error (%)",
             color="Measure",
             barmode="group",
-            text_auto=".2s",
+            text_auto=".2f",
             color_discrete_map={"MAE": CHART_COLORS[0], "RMSE": CHART_COLORS[1]},
-            labels={"Error": "Error (₹)"},
+            labels={"Error (%)": "Error (%)"},
         )
-        fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
+        fig.update_yaxes(ticksuffix="%")
         st.plotly_chart(fig_theme(fig), use_container_width=True)
     r2_col, diagnostics_col = st.columns([1, 1.35])
     with r2_col.container(border=True):
         st.markdown("**R² compared with baseline**")
+        r2_chart = metrics.sort_values("R² Score").copy()
+        r2_chart["R² (%)"] = r2_chart["R² Score"] * 100
         fig = px.bar(
-            metrics.sort_values("R² Score"),
-            x="R² Score",
+            r2_chart,
+            x="R² (%)",
             y="Model",
             orientation="h",
-            color="R² Score",
+            color="R² (%)",
             color_continuous_scale=["#EF4444", "#F59E0B", "#10B981"],
-            text_auto=".3f",
-            labels={"R² Score": "R² score"},
+            text_auto=".2f",
+            labels={"R² (%)": "R² score (%)"},
         )
         fig.add_vline(x=0, line_dash="dash", line_color=CHART_COLORS[2], annotation_text="Mean-only baseline")
+        fig.update_xaxes(ticksuffix="%")
         st.plotly_chart(fig_theme(fig), use_container_width=True)
     with diagnostics_col.container(border=True):
         st.markdown("**Prediction diagnostics**")
@@ -1892,19 +1782,19 @@ elif page == "About Project":
         st.markdown("**Purpose**")
         st.write(
             "Explore salary distributions and workforce composition, compare salary "
-            "regressors, and investigate K-Means employee segments using the dataset you upload."
+            "regressors, and investigate K-Means employee segments using the configured employee CSV."
         )
         st.code(
-            "Upload → Validate fields → Inspect data quality\n"
+            "Load CSV → Validate fields → Inspect data quality\n"
             "  ├─ Regression: Linear Regression / Decision Tree / Random Forest\n"
             "  ├─ K-Means: default K=2, with actual cluster profiles and silhouette score\n"
             "  └─ Insights: department, education, experience, and salary comparisons",
             language="text",
         )
         st.write(
-            "The regression and clustering pipelines are fitted from the current upload and "
-            "held in the Streamlit session. This project folder does not include a bundled "
-            "employee dataset or a serialized trained-model artifact."
+            f"The regression and clustering pipelines are fitted from `{DEFAULT_DATASET_PATH}` "
+            "and held in the Streamlit session. The employee CSV is included with the project; "
+            "trained-model artifacts are not serialized."
         )
         st.markdown(
             '<div class="insight-banner"><b>Explore:</b> Use the EDA filters to compare '
@@ -1912,7 +1802,7 @@ elif page == "About Project":
             unsafe_allow_html=True,
         )
     with runtime_tab:
-        st.markdown("**Results computed for this upload**")
+        st.markdown("**Results computed for the employee dataset**")
         st.caption(
             f"Training rows: {len(st.session_state['modelling_df']):,} before the train/test split · "
             f"Cluster count: {clustered['Cluster'].nunique()} · "
@@ -1922,10 +1812,10 @@ elif page == "About Project":
         )
         st.dataframe(
             metrics.sort_values("MAE").style.format({
-                "MAE": "₹{:,.0f}",
-                "MSE": "{:,.0f}",
-                "RMSE": "₹{:,.0f}",
-                "R² Score": "{:.3f}",
+                "MAE": lambda value: metric_percentage(value),
+                "MSE": lambda value: metric_percentage(value),
+                "RMSE": lambda value: metric_percentage(value),
+                "R² Score": lambda value: r2_percentage(value),
             }),
             use_container_width=True,
             hide_index=True,
@@ -1933,7 +1823,7 @@ elif page == "About Project":
         negative_scores = metrics[metrics["R² Score"] < 0]
         if not negative_scores.empty:
             negative_labels = ", ".join(
-                f"{row['Model']} ({row['R² Score']:.3f})"
+                f"{row['Model']} ({r2_percentage(row['R² Score'])})"
                 for _, row in negative_scores.iterrows()
             )
             st.warning(
@@ -1951,7 +1841,7 @@ elif page == "About Project":
         st.write("- Correlation and group differences are descriptive and do not establish causality.")
         st.write("- K-Means segments depend on the selected features, scaling, and chosen K; cluster numbers are arbitrary.")
         st.write("- IQR-flagged outliers and duplicate rows are reported but not removed from model training.")
-        st.write("- Models are not serialized; they are retrained when the uploaded data or settings change.")
+        st.write("- Models are not serialized; they are retrained when the employee dataset or settings change.")
     with st.container(border=True):
         st.markdown("**Run locally**")
         st.code(

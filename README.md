@@ -7,6 +7,7 @@ A Streamlit analytics dashboard for exploring employee salary data, comparing re
 - **Dashboard:** view employee and salary KPIs, department filters, salary charts, and a 3D salary landscape using the configured employee CSV
 - **Data Explorer:** department, gender, education, age, experience, and salary filters; salary distributions; workforce charts; correlation heatmap; and 3D exploration
 - **Preprocessing:** actual missing-value, duplicate, and IQR outlier checks; fitted encoding details; training/test row counts
+- **Statistical Analysis:** Pearson/Spearman correlations, confidence intervals, Welch two-group salary tests, and Kruskal-Wallis comparisons for three or more groups
 - **Salary Predictor:** Linear Regression, Decision Tree, or Random Forest using the fitted preprocessing pipeline and original feature order
 - **Pattern:** K-Means (fixed at K=2), cluster counts and profiles, silhouette score, salary distributions, and 2D/3D views
 - **Model Evaluation:** actual MAE, MSE, RMSE, R², actual-versus-predicted plot, and residual diagnostics

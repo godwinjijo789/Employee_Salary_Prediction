@@ -19,6 +19,7 @@ from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.cluster import KMeans
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, silhouette_score
+from statistical_analysis import analyze_correlation, compare_salary_groups
 
 warnings.filterwarnings("ignore")
 
@@ -185,16 +186,6 @@ def r2_value(v):
         return "—"
     return f"{v:.5f}"
 
-def snapshot_percentage(v):
-    if pd.isna(v):
-        return "—"
-    return f"{v:.2f}%"
-
-def r2_snapshot_percentage(v):
-    if pd.isna(v):
-        return "—"
-    return f"{v * 100:.2f}%"
-
 def normalize_columns(df):
     df = df.copy()
     df.columns = [str(c).strip() for c in df.columns]
@@ -348,6 +339,7 @@ navigation_pages = [
     "Dashboard",
     "Data Explorer",
     "Preprocessing",
+    "Statistical Analysis",
     "Salary Predictor",
     "Pattern",
     "Model Evaluation",
@@ -358,6 +350,7 @@ navigation_labels = {
     "Dashboard": ":material/dashboard: Dashboard",
     "Data Explorer": ":material/query_stats: Data Explorer",
     "Preprocessing": ":material/rule: Preprocessing",
+    "Statistical Analysis": ":material/analytics: Statistics",
     "Salary Predictor": ":material/payments: Salary Predictor",
     "Pattern": ":material/hub: Pattern",
     "Model Evaluation": ":material/monitoring: Models",
@@ -383,7 +376,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 with st.container(border=True):
-    nav_grid = st.columns(8, gap="small")
+    nav_grid = st.columns(len(navigation_pages), gap="small")
     for index, option in enumerate(navigation_pages):
         with nav_grid[index]:
             st.button(
@@ -625,12 +618,16 @@ if page == "Dashboard":
             st.plotly_chart(fig_theme(fig), use_container_width=True)
     st.subheader("Model snapshot")
     snapshot = metrics.sort_values("MAE").copy()
-    snapshot["MAE"] = snapshot["MAE"].map(snapshot_percentage)
-    snapshot["MSE"] = snapshot["MSE"].map(snapshot_percentage)
-    snapshot["RMSE"] = snapshot["RMSE"].map(snapshot_percentage)
-    snapshot["R² Score"] = snapshot["R² Score"].map(r2_snapshot_percentage)
-    st.dataframe(snapshot,
-                 use_container_width=True, hide_index=True)
+    st.dataframe(
+        snapshot.style.format({
+            "MAE": "₹{:,.2f}",
+            "MSE": "{:,.2f}",
+            "RMSE": "₹{:,.2f}",
+            "R² Score": "{:.5f}",
+        }),
+        use_container_width=True,
+        hide_index=True,
+    )
     st.caption(f"Best model by MAE on this run: {best_model_name}. This is a relative comparison, not a guarantee of accurate salary prediction.")
 
 elif page == "Data Explorer":
@@ -957,6 +954,202 @@ elif page == "Data Explorer":
             "filtered_employee_data.csv",
             "text/csv",
         )
+
+elif page == "Statistical Analysis":
+    page_header(
+        "Statistical analysis",
+        "Explore correlations and test salary differences across employee groups.",
+    )
+    correlation_tab, group_test_tab = st.tabs(
+        ["Correlation analysis", "Salary group tests"]
+    )
+
+    with correlation_tab:
+        numeric_columns = ["Age", "Experience", "Salary"]
+        numeric_data = (
+            df[numeric_columns]
+            .apply(pd.to_numeric, errors="coerce")
+            .replace([np.inf, -np.inf], np.nan)
+        )
+        numeric_columns = [
+            column for column in numeric_columns
+            if numeric_data[column].nunique(dropna=True) > 1
+        ]
+        if len(numeric_columns) < 2:
+            st.info("At least two varying numeric fields are needed for correlation analysis.")
+        else:
+            method_column, confidence_column = st.columns(2)
+            method = method_column.selectbox(
+                "Correlation method",
+                ["Pearson", "Spearman"],
+                help="Pearson measures linear association; Spearman measures monotonic rank association.",
+                key="stat_correlation_method",
+            )
+            confidence_percent = confidence_column.selectbox(
+                "Pearson confidence interval",
+                [90, 95, 99],
+                index=1,
+                format_func=lambda value: f"{value}%",
+                key="stat_correlation_confidence",
+            )
+            correlation_matrix = numeric_data.corr(
+                method=method.lower(),
+                min_periods=3,
+            )
+            matrix_figure = px.imshow(
+                correlation_matrix,
+                text_auto=".2f",
+                zmin=-1,
+                zmax=1,
+                color_continuous_scale=["#EF4444", "#F8FAFC", "#2563EB"],
+                labels={"color": "Correlation"},
+            )
+            st.plotly_chart(
+                fig_theme(matrix_figure),
+                alt=f"{method} correlation matrix for age, experience, and salary",
+            )
+
+            st.markdown("#### Test a selected variable pair")
+            first_column, second_column = st.columns(2)
+            first_default = (
+                numeric_columns.index("Experience")
+                if "Experience" in numeric_columns else 0
+            )
+            first_variable = first_column.selectbox(
+                "First variable",
+                numeric_columns,
+                index=first_default,
+                key="stat_correlation_first",
+            )
+            second_options = [
+                column for column in numeric_columns if column != first_variable
+            ]
+            second_default = (
+                second_options.index("Salary")
+                if "Salary" in second_options else 0
+            )
+            second_variable = second_column.selectbox(
+                "Second variable",
+                second_options,
+                index=second_default,
+                key="stat_correlation_second",
+            )
+            try:
+                correlation_result = analyze_correlation(
+                    numeric_data[first_variable],
+                    numeric_data[second_variable],
+                    method,
+                    confidence_percent / 100,
+                )
+            except ValueError as error:
+                st.info(f"Correlation is unavailable: {error}")
+            else:
+                result_columns = st.columns(3)
+                coefficient_label = "Pearson r" if method == "Pearson" else "Spearman ρ"
+                result_columns[0].metric(
+                    coefficient_label,
+                    f"{correlation_result.coefficient:.3f}",
+                )
+                result_columns[1].metric(
+                    "p-value",
+                    "<0.001" if correlation_result.p_value < 0.001
+                    else f"{correlation_result.p_value:.3f}",
+                )
+                result_columns[2].metric("Paired records", f"{correlation_result.sample_size:,}")
+                if correlation_result.confidence_interval is not None:
+                    lower, upper = correlation_result.confidence_interval
+                    st.caption(
+                        f"{confidence_percent}% confidence interval for Pearson r: "
+                        f"[{lower:.3f}, {upper:.3f}]."
+                    )
+                else:
+                    st.caption(
+                        "A confidence interval is shown for Pearson only. "
+                        "The Spearman p-value is an approximation for large samples."
+                    )
+                st.caption(
+                    "The p-value tests for zero association; correlation does not imply causation. "
+                    "The calculation uses paired, non-missing observations."
+                )
+
+    with group_test_tab:
+        st.markdown(
+            "Compare salary across Gender, Education, or Department. "
+            "Two groups use Welch's t-test; three or more use Kruskal-Wallis."
+        )
+        group_column = st.selectbox(
+            "Group employees by",
+            ["Gender", "Education", "Department"],
+            key="stat_salary_group_column",
+        )
+        confidence_percent = st.selectbox(
+            "Confidence level",
+            [90, 95, 99],
+            index=1,
+            format_func=lambda value: f"{value}%",
+            key="stat_group_confidence",
+        )
+        try:
+            group_summary, group_test = compare_salary_groups(
+                df,
+                group_column,
+                confidence_level=confidence_percent / 100,
+            )
+        except ValueError as error:
+            st.info(f"Group comparison is unavailable: {error}")
+        else:
+            st.dataframe(
+                group_summary,
+                hide_index=True,
+                alt=f"Salary summaries and confidence intervals by {group_column.lower()}",
+            )
+            result_columns = st.columns(3)
+            result_columns[0].metric("Test", group_test.method)
+            result_columns[1].metric("Test statistic", f"{group_test.statistic:.3f}")
+            result_columns[2].metric(
+                "p-value",
+                "<0.001" if group_test.p_value < 0.001
+                else f"{group_test.p_value:.3f}",
+            )
+            alpha = 1 - confidence_percent / 100
+            st.caption(
+                f"{group_test.sample_size:,} complete records across "
+                f"{group_test.group_count} groups; significance level α = {alpha:.2f}."
+            )
+            if group_test.p_value < alpha:
+                if group_test.mean_difference is not None:
+                    st.info(
+                        "The test found evidence of a difference in group mean salaries "
+                        f"at the selected confidence level."
+                    )
+                else:
+                    st.info(
+                        "The test found evidence that salary distributions differ across "
+                        "at least some groups. It does not identify which pairs differ."
+                    )
+            else:
+                st.info(
+                    "The test did not detect a statistically significant salary difference "
+                    "at the selected confidence level."
+                )
+            if (
+                group_test.mean_difference is not None
+                and group_test.difference_confidence_interval is not None
+            ):
+                first_group, second_group = group_summary["Group"].tolist()
+                lower, upper = group_test.difference_confidence_interval
+                st.caption(
+                    f"Mean difference ({first_group} − {second_group}): "
+                    f"{money(group_test.mean_difference)}; "
+                    f"{confidence_percent}% CI [{money(lower)}, {money(upper)}]."
+                )
+            st.caption(
+                "Tests assume independent rows; repeated EmployeeID values or duplicate rows "
+                "can violate this assumption. Missing group labels and salaries are excluded. "
+                "Repeated comparisons can inflate false positives. "
+                "These associations are not causal and should not be used alone for "
+                "employment or compensation decisions."
+            )
 
 elif page == "Preprocessing":
     page_header(
@@ -1701,12 +1894,26 @@ elif page == "Model Evaluation":
     metrics_col, error_col = st.columns([1, 1.3])
     with metrics_col.container(border=True):
         st.markdown("**Test-set scorecard**")
+        evaluation_display = metrics.sort_values("MAE").rename(columns={
+            "MAE": "MAE (₹)",
+            "MSE": "MSE (₹²)",
+            "RMSE": "RMSE (₹)",
+            "R² Score": "R² Score",
+        })
         st.dataframe(
-            metrics.sort_values("MAE").style.format(
-                {"MAE": "₹{:,.2f}", "MSE": "{:,.2f}", "RMSE": "₹{:,.2f}", "R² Score": "{:.5f}"}
-            ),
+            evaluation_display.style.format({
+                "MAE (₹)": "₹{:,.2f}",
+                "MSE (₹²)": "{:,.2f}",
+                "RMSE (₹)": "₹{:,.2f}",
+                "R² Score": "{:.5f}",
+            }),
             use_container_width=True,
             hide_index=True,
+        )
+        best_evaluation = metrics.loc[metrics["MAE"].idxmin()]
+        st.caption(
+            f"Best model by MAE: {best_evaluation['Model']} "
+            f"({money(best_evaluation['MAE'])})."
         )
     with error_col.container(border=True):
         st.markdown("**Absolute and squared error**")
@@ -1810,9 +2017,7 @@ elif page == "About Project":
         "About this project",
         "A practical employee salary analytics workflow with transparent, data-derived results.",
     )
-    overview_tab, runtime_tab, limitations_tab = st.tabs(
-        ["Project overview", "Current run", "Limitations"]
-    )
+    overview_tab, runtime_tab = st.tabs(["Project overview", "Current run"])
     with overview_tab:
         st.markdown("**Purpose**")
         st.write(
@@ -1867,16 +2072,6 @@ elif page == "About Project":
             )
         else:
             st.info("No negative R² values were found in this run's model comparison.")
-    with limitations_tab:
-        st.warning(
-            "Salary predictions are exploratory estimates, not official compensation recommendations. "
-            "Check the held-out metrics and residual diagnostics before considering any use."
-        )
-        st.write("- A random train/test split provides one estimate of generalization performance.")
-        st.write("- Correlation and group differences are descriptive and do not establish causality.")
-        st.write("- K-Means segments depend on the selected features, scaling, and chosen K; cluster numbers are arbitrary.")
-        st.write("- IQR-flagged outliers and duplicate rows are reported but not removed from model training.")
-        st.write("- Models are not serialized; they are retrained when the employee dataset or settings change.")
     with st.container(border=True):
         st.markdown("**Run locally**")
         st.code(

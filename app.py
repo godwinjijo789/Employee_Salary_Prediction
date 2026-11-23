@@ -42,19 +42,24 @@ st.markdown("""
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 1rem;
+        gap: 1.1rem;
         margin: 0 0 .7rem;
-        padding: .9rem 1.25rem;
-        border: 1px solid rgba(255,255,255,.16);
-        border-radius: 18px;
-        background: linear-gradient(110deg, #0B1B3A 0%, #1D4ED8 68%, #0891B2 100%);
-        box-shadow: 0 10px 24px rgba(37, 99, 235, .16);
+        padding: 1rem 1.35rem;
+        overflow: hidden;
+        border: 1px solid rgba(199,210,254,.34);
+        border-radius: 22px;
+        background:
+            radial-gradient(ellipse at 88% 0%, rgba(34,211,238,.32), transparent 36%),
+            linear-gradient(118deg, #111827 0%, #312E81 52%, #0E7490 100%);
+        box-shadow:
+            0 16px 34px rgba(49,46,129,.24),
+            inset 0 1px 0 rgba(255,255,255,.18);
         color: #fff;
     }
     .brand-lockup {
         display: flex;
         align-items: center;
-        gap: .85rem;
+        gap: 1rem;
     }
     .brand-mark {
         display: flex;
@@ -62,41 +67,47 @@ st.markdown("""
         gap: 3px;
         height: 30px;
         padding: 6px;
-        border: 1px solid rgba(255,255,255,.28);
-        border-radius: 10px;
-        background: rgba(255,255,255,.12);
+        border: 1px solid rgba(255,255,255,.34);
+        border-radius: 12px;
+        background: linear-gradient(145deg, rgba(103,232,249,.24), rgba(129,140,248,.18));
+        box-shadow:
+            0 8px 18px rgba(8,145,178,.2),
+            inset 0 1px 0 rgba(255,255,255,.2);
     }
     .brand-mark span {
         display: block;
         width: 5px;
         border-radius: 4px;
-        background: #67E8F9;
+        background: linear-gradient(180deg, #A5F3FC, #22D3EE);
     }
     .brand-mark span:nth-child(1) { height: 10px; }
     .brand-mark span:nth-child(2) { height: 17px; }
     .brand-mark span:nth-child(3) { height: 13px; }
     .brand-name {
         color: #fff;
-        font-size: 1.65rem;
-        font-weight: 750;
-        letter-spacing: -.02em;
+        font-size: 1.72rem;
+        font-weight: 800;
+        letter-spacing: -.035em;
         line-height: 1.2;
+        text-shadow: 0 2px 18px rgba(15,23,42,.32);
     }
     .brand-subtitle {
-        margin-top: .18rem;
-        color: rgba(255,255,255,.76);
+        margin-top: .22rem;
+        color: rgba(255,255,255,.82);
         font-size: .78rem;
-        letter-spacing: .04em;
+        letter-spacing: .025em;
     }
     .brand-status {
         padding: .42rem .7rem;
-        border: 1px solid rgba(255,255,255,.24);
+        border: 1px solid rgba(255,255,255,.28);
         border-radius: 999px;
-        color: rgba(255,255,255,.9);
+        background: rgba(15,23,42,.18);
+        color: rgba(255,255,255,.94);
         font-size: .7rem;
         font-weight: 700;
         letter-spacing: .1em;
         white-space: nowrap;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
     }
     .page-hero {
         padding: 1.7rem 1.9rem;
@@ -170,7 +181,9 @@ st.markdown("""
         text-overflow: ellipsis;
     }
     @media (max-width: 640px) {
-        .brand-masthead { padding: .8rem .9rem; }
+        .brand-masthead { padding: .85rem 1rem; border-radius: 18px; }
+        .brand-name { font-size: 1.48rem; }
+        .brand-subtitle { font-size: .72rem; }
         .brand-status { display: none; }
     }
 </style>

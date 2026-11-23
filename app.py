@@ -323,16 +323,6 @@ navigation_icons = {
     "Business Insights": "lightbulb",
     "About Project": "menu_book",
 }
-navigation_captions = [
-    "Workforce snapshot and KPIs",
-    "Interactive salary and workforce charts",
-    "Quality checks and model preprocessing",
-    "Estimate monthly pay",
-    "K-Means profiles and 3D exploration",
-    "Actual test-set metrics and diagnostics",
-    "Data-derived department and workforce patterns",
-    "Methods, project scope, and limitations",
-]
 if "active_dashboard_page" not in st.session_state:
     st.session_state["active_dashboard_page"] = st.session_state.get(
         "dashboard_navigation", "Overview"
@@ -340,17 +330,15 @@ if "active_dashboard_page" not in st.session_state:
 if st.session_state["active_dashboard_page"] not in navigation_pages:
     st.session_state["active_dashboard_page"] = "Overview"
 st.sidebar.markdown("### Navigate")
-for index, (option, caption) in enumerate(zip(navigation_pages, navigation_captions)):
-    with st.sidebar.container(border=True):
-        st.button(
-            f":material/{navigation_icons[option]}: {option}",
-            key=f"navigation_card_{index}",
-            type="primary" if st.session_state["active_dashboard_page"] == option else "secondary",
-            use_container_width=True,
-            on_click=select_page,
-            args=(option,),
-        )
-        st.caption(caption)
+for index, option in enumerate(navigation_pages):
+    st.sidebar.button(
+        f":material/{navigation_icons[option]}: {option}",
+        key=f"navigation_card_{index}",
+        type="primary" if st.session_state["active_dashboard_page"] == option else "secondary",
+        use_container_width=True,
+        on_click=select_page,
+        args=(option,),
+    )
 page = st.session_state["active_dashboard_page"]
 st.sidebar.divider()
 st.sidebar.caption("Appearance")
@@ -370,31 +358,58 @@ if uploaded is not None:
 
 df = st.session_state.get("raw_df")
 if df is None:
-    page_header(
-        "Understand your workforce. Explore what drives pay.",
-        "A practical workspace for exploring employee data, comparing salary models, "
-        "and discovering workforce patterns.",
-        "PEOPLE ANALYTICS  /  SALARY INTELLIGENCE",
-    )
-    st.info("Upload a CSV or Excel file from the sidebar to activate your analytics workspace.")
+    if page == "Overview":
+        page_header(
+            "Understand your workforce. Explore what drives pay.",
+            "A practical workspace for exploring employee data, comparing salary models, "
+            "and discovering workforce patterns.",
+            "PEOPLE ANALYTICS  /  SALARY INTELLIGENCE",
+        )
+        st.info("Upload a CSV or Excel file from the sidebar to activate your analytics workspace.")
 
-    st.subheader("Your analytics workspace")
-    c1, c2, c3 = st.columns(3)
-    c1.markdown(
-        '<div class="feature-card"><div class="feature-card__number">01 / EXPLORE</div>'
-        '<h3>Get to know the data</h3><p>Check records, missing values, and salary distributions.</p></div>',
-        unsafe_allow_html=True,
-    )
-    c2.markdown(
-        '<div class="feature-card"><div class="feature-card__number">02 / PREDICT</div>'
-        '<h3>Estimate monthly pay</h3><p>Compare three models and inspect their test performance.</p></div>',
-        unsafe_allow_html=True,
-    )
-    c3.markdown(
-        '<div class="feature-card"><div class="feature-card__number">03 / DISCOVER</div>'
-        '<h3>Find workforce patterns</h3><p>Segment employees and compare group profiles.</p></div>',
-        unsafe_allow_html=True,
-    )
+        st.subheader("Your analytics workspace")
+        c1, c2, c3 = st.columns(3)
+        c1.markdown(
+            '<div class="feature-card"><div class="feature-card__number">01 / EXPLORE</div>'
+            '<h3>Get to know the data</h3><p>Check records, missing values, and salary distributions.</p></div>',
+            unsafe_allow_html=True,
+        )
+        c2.markdown(
+            '<div class="feature-card"><div class="feature-card__number">02 / PREDICT</div>'
+            '<h3>Estimate monthly pay</h3><p>Compare three models and inspect their test performance.</p></div>',
+            unsafe_allow_html=True,
+        )
+        c3.markdown(
+            '<div class="feature-card"><div class="feature-card__number">03 / DISCOVER</div>'
+            '<h3>Find workforce patterns</h3><p>Segment employees and compare group profiles.</p></div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        page_descriptions = {
+            "Exploratory Data Analysis": "Interactive salary and workforce charts with department, gender, education, age, and experience filters.",
+            "Data Preparation": "Missing values, duplicates, outlier checks, feature transformations, and the actual train/test split.",
+            "Salary Prediction": "Estimate monthly salary with one of the trained regression models.",
+            "Employee Clusters": "Inspect K-Means groups, employee profiles, silhouette score, and 2D/3D views.",
+            "Model Evaluation": "Review actual MAE, MSE, RMSE, R², and prediction residuals.",
+            "Business Insights": "Discover salary and workforce patterns calculated from your uploaded records.",
+            "About Project": "Review the project's modeling workflow and interpretation guidance.",
+        }
+        page_header(page, page_descriptions[page], "UPLOAD DATA TO CONTINUE")
+        st.info(
+            f"Upload a CSV or Excel file in the sidebar to open **{page}** with your data."
+        )
+        with st.container(border=True):
+            st.markdown("**Required next step**")
+            st.write(
+                "Choose a file containing the required employee columns. This section will "
+                "show results from that upload; no sample metrics or insights are substituted."
+            )
+            st.button(
+                "Go to Overview",
+                key="empty_state_overview",
+                on_click=select_page,
+                args=("Overview",),
+            )
 
     st.subheader("Required dataset fields")
     st.caption("Use these exact column names. Salary should contain numeric values.")

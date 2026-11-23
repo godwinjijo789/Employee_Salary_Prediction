@@ -3,8 +3,8 @@
 A Streamlit analytics dashboard for exploring employee salary data, comparing regression models, and discovering workforce patterns. The dashboard preserves the existing preprocessing and model pipeline while providing a responsive light/dark interface and interactive Plotly visualizations.
 
 ## Dashboard sections
-- Card-based sidebar navigation with icon labels, short descriptions, and a highlighted active section
-- **Overview:** dataset-wide employee and salary KPIs, department filters, salary charts, and a 3D salary landscape
+- A branded **Emp Analysis** masthead with horizontal, icon-based top navigation
+- **Dashboard:** upload the employee dataset and view dataset-wide employee and salary KPIs, department filters, salary charts, and a 3D salary landscape
 - **Exploratory Data Analysis:** department, gender, education, age, and experience filters; salary distributions; workforce charts; correlation heatmap; 3D exploration
 - **Data Preparation:** actual missing-value, duplicate, and IQR outlier checks; fitted encoding details; training/test row counts
 - **Salary Prediction:** Linear Regression, Decision Tree, or Random Forest using the fitted preprocessing pipeline and original feature order
@@ -43,7 +43,7 @@ The app expects age, experience, and salary to be numeric. Currency symbols and 
    ```powershell
    .venv\Scripts\python.exe -m streamlit run app.py --server.port 8502
    ```
-7. A browser tab opens. Upload your employee dataset using the left sidebar.
+7. A browser tab opens. Open **Dashboard** and upload your employee dataset there.
 8. To switch between light and dark appearance, open the top-right menu and choose **Light** or **Dark** under **Theme**.
 
 ## Data, models, and results

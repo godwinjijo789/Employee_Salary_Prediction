@@ -23,7 +23,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, s
 warnings.filterwarnings("ignore")
 
 st.set_page_config(
-    page_title="Employee Salary Analytics | Workforce Insights",
+    page_title="Emp Analysis",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -36,6 +36,66 @@ px.defaults.color_discrete_sequence = CHART_COLORS
 
 st.markdown("""
 <style>
+    .brand-masthead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 0 0 .7rem;
+        padding: .9rem 1.25rem;
+        border: 1px solid rgba(255,255,255,.16);
+        border-radius: 18px;
+        background: linear-gradient(110deg, #0B1B3A 0%, #1D4ED8 68%, #0891B2 100%);
+        box-shadow: 0 10px 24px rgba(37, 99, 235, .16);
+        color: #fff;
+    }
+    .brand-lockup {
+        display: flex;
+        align-items: center;
+        gap: .85rem;
+    }
+    .brand-mark {
+        display: flex;
+        align-items: end;
+        gap: 3px;
+        height: 30px;
+        padding: 6px;
+        border: 1px solid rgba(255,255,255,.28);
+        border-radius: 10px;
+        background: rgba(255,255,255,.12);
+    }
+    .brand-mark span {
+        display: block;
+        width: 5px;
+        border-radius: 4px;
+        background: #67E8F9;
+    }
+    .brand-mark span:nth-child(1) { height: 10px; }
+    .brand-mark span:nth-child(2) { height: 17px; }
+    .brand-mark span:nth-child(3) { height: 13px; }
+    .brand-name {
+        color: #fff;
+        font-size: 1.65rem;
+        font-weight: 750;
+        letter-spacing: -.02em;
+        line-height: 1.2;
+    }
+    .brand-subtitle {
+        margin-top: .18rem;
+        color: rgba(255,255,255,.76);
+        font-size: .78rem;
+        letter-spacing: .04em;
+    }
+    .brand-status {
+        padding: .42rem .7rem;
+        border: 1px solid rgba(255,255,255,.24);
+        border-radius: 999px;
+        color: rgba(255,255,255,.9);
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .1em;
+        white-space: nowrap;
+    }
     .page-hero {
         padding: 1.7rem 1.9rem;
         margin: 0 0 1.15rem;
@@ -93,6 +153,10 @@ st.markdown("""
         border-left: 4px solid #06B6D4;
         border-radius: 0 12px 12px 0;
         background: linear-gradient(90deg, rgba(6,182,212,.12), rgba(37,99,235,.05));
+    }
+    @media (max-width: 640px) {
+        .brand-masthead { padding: .8rem .9rem; }
+        .brand-status { display: none; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -159,6 +223,42 @@ def clear_dataset():
 
 def select_page(page_name):
     st.session_state["active_dashboard_page"] = page_name
+
+def render_dataset_uploader():
+    with st.container(border=True):
+        upload_col, dataset_col = st.columns([3, 1], vertical_alignment="center")
+        with upload_col:
+            st.markdown("#### :material/cloud_upload: Upload employee dataset")
+            st.caption("Add a CSV or Excel file to populate salary and workforce analytics.")
+            uploaded = st.file_uploader(
+                "Choose a CSV or Excel file",
+                type=["csv", "xlsx", "xls"],
+                key=f"employee_upload_{st.session_state['upload_version']}",
+            )
+        with dataset_col:
+            if st.session_state.get("raw_df") is not None:
+                st.badge("Dataset loaded", icon=":material/check_circle:", color="green")
+                st.caption(st.session_state.get("uploaded_name", "Uploaded dataset"))
+                st.button(
+                    "Clear dataset",
+                    on_click=clear_dataset,
+                    use_container_width=True,
+                    key="clear_dataset_button",
+                )
+            else:
+                st.badge("Ready for data", icon=":material/upload_file:", color="blue")
+                st.caption("CSV · XLSX · XLS")
+
+    if uploaded is not None:
+        try:
+            data = normalize_columns(read_data(uploaded))
+        except Exception as e:
+            st.error(f"Could not read file: {e}")
+        else:
+            st.session_state["raw_df"] = data
+            st.session_state["uploaded_name"] = uploaded.name
+            st.session_state["upload_version"] += 1
+            st.rerun()
 
 def get_feature_types(df, features):
     numeric = [c for c in features if pd.api.types.is_numeric_dtype(df[c])]
@@ -287,24 +387,15 @@ def numeric_range_slider(series, label, key, step):
     )
 
 # ---------- Sidebar ----------
-st.sidebar.markdown("## :material/monitoring: Employee Analytics")
-st.sidebar.caption("Salary intelligence · Workforce insights")
 st.session_state.setdefault("upload_version", 0)
-uploaded = st.sidebar.file_uploader(
-    "Upload employee dataset",
-    type=["csv", "xlsx", "xls"],
-    key=f"employee_upload_{st.session_state['upload_version']}",
-)
-if uploaded is not None or st.session_state.get("raw_df") is not None:
-    st.sidebar.button(
-        "Clear dataset",
-        on_click=clear_dataset,
-        use_container_width=True,
-        key="clear_dataset_button",
-    )
-st.sidebar.divider()
+st.sidebar.caption("Appearance")
+st.sidebar.caption("Choose Light or Dark from the Theme controls in the top-right menu.")
+with st.sidebar.expander("Dataset requirements"):
+    st.caption("Target: Monthly_Salary")
+    st.caption("Features: Age, Experience_Years, Department, Education_Level, Gender")
+
 navigation_pages = [
-    "Overview",
+    "Dashboard",
     "Exploratory Data Analysis",
     "Data Preparation",
     "Salary Prediction",
@@ -313,59 +404,61 @@ navigation_pages = [
     "Business Insights",
     "About Project",
 ]
-navigation_icons = {
-    "Overview": "space_dashboard",
-    "Exploratory Data Analysis": "query_stats",
-    "Data Preparation": "rule",
-    "Salary Prediction": "payments",
-    "Employee Clusters": "hub",
-    "Model Evaluation": "monitoring",
-    "Business Insights": "lightbulb",
-    "About Project": "menu_book",
+navigation_labels = {
+    "Dashboard": ":material/dashboard: Dashboard",
+    "Exploratory Data Analysis": ":material/query_stats: Explore",
+    "Data Preparation": ":material/rule: Prepare",
+    "Salary Prediction": ":material/payments: Predict",
+    "Employee Clusters": ":material/hub: Clusters",
+    "Model Evaluation": ":material/monitoring: Models",
+    "Business Insights": ":material/lightbulb: Insights",
+    "About Project": ":material/menu_book: About",
 }
 if "active_dashboard_page" not in st.session_state:
     st.session_state["active_dashboard_page"] = st.session_state.get(
-        "dashboard_navigation", "Overview"
+        "dashboard_navigation", "Dashboard"
     )
+if st.session_state["active_dashboard_page"] == "Overview":
+    st.session_state["active_dashboard_page"] = "Dashboard"
 if st.session_state["active_dashboard_page"] not in navigation_pages:
-    st.session_state["active_dashboard_page"] = "Overview"
-st.sidebar.markdown("### Navigate")
-for index, option in enumerate(navigation_pages):
-    st.sidebar.button(
-        f":material/{navigation_icons[option]}: {option}",
-        key=f"navigation_card_{index}",
-        type="primary" if st.session_state["active_dashboard_page"] == option else "secondary",
-        use_container_width=True,
-        on_click=select_page,
-        args=(option,),
-    )
-page = st.session_state["active_dashboard_page"]
-st.sidebar.divider()
-st.sidebar.caption("Appearance")
-st.sidebar.caption("Choose Light or Dark from the Theme controls in the top-right menu.")
-st.sidebar.divider()
-with st.sidebar.expander("Dataset requirements"):
-    st.caption("Target: Monthly_Salary")
-    st.caption("Features: Age, Experience_Years, Department, Education_Level, Gender")
+    st.session_state["active_dashboard_page"] = "Dashboard"
 
-# Keep uploaded data in session state.
-if uploaded is not None:
-    try:
-        st.session_state["raw_df"] = normalize_columns(read_data(uploaded))
-        st.session_state["uploaded_name"] = uploaded.name
-    except Exception as e:
-        st.sidebar.error(f"Could not read file: {e}")
+st.markdown(
+    '<div class="brand-masthead">'
+    '<div class="brand-lockup">'
+    '<span class="brand-mark"><span></span><span></span><span></span></span>'
+    '<div><div class="brand-name">Emp Analysis</div>'
+    '<div class="brand-subtitle">People analytics · Salary intelligence</div></div>'
+    '</div><div class="brand-status">WORKFORCE INSIGHTS</div></div>',
+    unsafe_allow_html=True,
+)
+with st.container(border=True):
+    nav_grid = st.grid("auto", min_column_width=112, gap="small")
+    for index, option in enumerate(navigation_pages):
+        nav_grid.button(
+            navigation_labels[option],
+            key=f"top_navigation_{index}",
+            type="primary" if st.session_state["active_dashboard_page"] == option else "secondary",
+            width="stretch",
+            wrap=True,
+            on_click=select_page,
+            args=(option,),
+        )
+page = st.session_state["active_dashboard_page"]
 
 df = st.session_state.get("raw_df")
+if df is not None and page == "Dashboard":
+    render_dataset_uploader()
+    df = st.session_state.get("raw_df")
+
 if df is None:
-    if page == "Overview":
+    if page == "Dashboard":
         page_header(
-            "Understand your workforce. Explore what drives pay.",
-            "A practical workspace for exploring employee data, comparing salary models, "
-            "and discovering workforce patterns.",
+            "Dashboard",
+            "Explore workforce data, salary patterns, and model performance in one place.",
             "PEOPLE ANALYTICS  /  SALARY INTELLIGENCE",
         )
-        st.info("Upload a CSV or Excel file from the sidebar to activate your analytics workspace.")
+        st.info("Upload a dataset above to activate your analytics dashboard.")
 
         st.subheader("Your analytics workspace")
         c1, c2, c3 = st.columns(3)
@@ -384,6 +477,8 @@ if df is None:
             '<h3>Find workforce patterns</h3><p>Segment employees and compare group profiles.</p></div>',
             unsafe_allow_html=True,
         )
+        st.space("medium")
+        render_dataset_uploader()
     else:
         page_descriptions = {
             "Exploratory Data Analysis": "Interactive salary and workforce charts with department, gender, education, age, and experience filters.",
@@ -396,28 +491,21 @@ if df is None:
         }
         page_header(page, page_descriptions[page], "UPLOAD DATA TO CONTINUE")
         st.info(
-            f"Upload a CSV or Excel file in the sidebar to open **{page}** with your data."
+            f"Upload a CSV or Excel file from the Dashboard to open **{page}** with your data."
         )
         with st.container(border=True):
             st.markdown("**Required next step**")
             st.write(
-                "Choose a file containing the required employee columns. This section will "
+                "Choose a file from the Dashboard containing the required employee columns. This section will "
                 "show results from that upload; no sample metrics or insights are substituted."
             )
             st.button(
-                "Go to Overview",
+                "Go to Dashboard",
                 key="empty_state_overview",
                 on_click=select_page,
-                args=("Overview",),
+                args=("Dashboard",),
             )
 
-    st.subheader("Required dataset fields")
-    st.caption("Use these exact column names. Salary should contain numeric values.")
-    st.dataframe(pd.DataFrame({
-        "Column": EXPECTED,
-        "Role": ["Feature", "Feature", "Feature", "Feature", "Feature", "Prediction target"],
-        "Type": ["Number", "Number", "Category", "Category", "Category", "Number"],
-    }), use_container_width=True, hide_index=True)
     st.stop()
 
 missing = validate_dataset(df)
@@ -480,11 +568,11 @@ best_model_name = metrics.sort_values("MAE").iloc[0]["Model"]
 best_model = models[best_model_name]
 
 # ---------- Pages ----------
-if page == "Overview":
+if page == "Dashboard":
     page_header(
-        "Workforce overview",
+        "Workforce dashboard",
         "A live snapshot of salary, team composition, and model performance.",
-        f"OVERVIEW  /  {st.session_state.get('uploaded_name', 'UPLOADED DATASET')}",
+        f"DASHBOARD  /  {st.session_state.get('uploaded_name', 'UPLOADED DATASET')}",
     )
     department_options = sorted(df["Department"].fillna("Missing").astype(str).unique().tolist())
     filter_col, view_col = st.columns([1.5, 1])

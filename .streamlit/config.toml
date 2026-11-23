@@ -9,6 +9,7 @@ baseFontSize = 15
 baseFontWeight = 400
 headingFontSizes = ["36px", "30px", "24px", "20px", "17px", "15px"]
 headingFontWeights = [650, 650, 600, 600, 600, 600]
+paddingTop = "1rem"
 
 [theme.light]
 primaryColor = "#2563EB"

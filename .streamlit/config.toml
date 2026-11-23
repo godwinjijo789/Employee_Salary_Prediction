@@ -3,53 +3,58 @@ showWidgetBorder = true
 showSidebarBorder = true
 baseRadius = "12px"
 buttonRadius = "8px"
-font = "sans serif"
-headingFont = "sans serif"
-baseFontSize = 15
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+codeFont = "monospace"
+baseFontSize = 16
 baseFontWeight = 400
-headingFontSizes = ["36px", "30px", "24px", "20px", "17px", "15px"]
-headingFontWeights = [650, 650, 600, 600, 600, 600]
+codeFontSize = "0.875rem"
+codeFontWeight = 400
+headingFontSizes = ["40px", "32px", "26px", "22px", "19px", "17px"]
+headingFontWeights = [700, 700, 650, 650, 600, 600]
+metricValueFontSize = "1.75rem"
+metricValueFontWeight = 700
 paddingTop = "1rem"
 
 [theme.light]
-primaryColor = "#2563EB"
+primaryColor = "#7C3AED"
 backgroundColor = "#F3F7FC"
 secondaryBackgroundColor = "#FFFFFF"
 textColor = "#172033"
 borderColor = "#E1E8F0"
 codeBackgroundColor = "#EDF2F7"
 codeTextColor = "#23364D"
-linkColor = "#2563EB"
-chartCategoricalColors = ["#2563EB", "#06B6D4", "#F59E0B", "#8B5CF6", "#EC4899", "#10B981", "#EF4444"]
+linkColor = "#7C3AED"
+chartCategoricalColors = ["#7C3AED", "#06B6D4", "#F97316", "#A855F7", "#EC4899", "#10B981", "#EF4444"]
 dataframeHeaderBackgroundColor = "#EDF3F7"
 dataframeBorderColor = "#E1E8F0"
 
 [theme.dark]
-primaryColor = "#38BDF8"
+primaryColor = "#A78BFA"
 backgroundColor = "#0B1220"
 secondaryBackgroundColor = "#111C2E"
 textColor = "#E8EEF8"
 borderColor = "#26364D"
 codeBackgroundColor = "#17243A"
 codeTextColor = "#DBEAFE"
-linkColor = "#7DD3FC"
-chartCategoricalColors = ["#60A5FA", "#22D3EE", "#FBBF24", "#C4B5FD", "#FDA4AF", "#34D399", "#F87171"]
+linkColor = "#C4B5FD"
+chartCategoricalColors = ["#A78BFA", "#22D3EE", "#FB923C", "#C4B5FD", "#FDA4AF", "#34D399", "#F87171"]
 dataframeHeaderBackgroundColor = "#17243A"
 dataframeHeaderTextColor = "#E8EEF8"
 dataframeBorderColor = "#26364D"
 
 [theme.light.sidebar]
-backgroundColor = "#EDF3FA"
-secondaryBackgroundColor = "#E2ECF8"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F8FAFC"
 textColor = "#172033"
-borderColor = "#D8E2EC"
-primaryColor = "#2563EB"
-linkColor = "#2563EB"
+borderColor = "#E7EAF0"
+primaryColor = "#7C3AED"
+linkColor = "#7C3AED"
 
 [theme.dark.sidebar]
 backgroundColor = "#080E19"
 secondaryBackgroundColor = "#111C2E"
 textColor = "#E8EEF8"
 borderColor = "#26364D"
-primaryColor = "#38BDF8"
-linkColor = "#7DD3FC"
+primaryColor = "#A78BFA"
+linkColor = "#C4B5FD"

@@ -33,146 +33,173 @@ st.set_page_config(
 EXPECTED = ["Age", "Experience", "Department", "Education", "Gender", "Salary"]
 CATEGORICAL_FEATURES = ["Department", "Education", "Gender"]
 DEFAULT_DATASET_PATH = Path(__file__).resolve().parent / "data" / "employee_salary_cleaned.csv"
-CHART_COLORS = ["#2563EB", "#06B6D4", "#F59E0B", "#8B5CF6", "#EC4899", "#10B981", "#EF4444", "#6366F1"]
+CHART_COLORS = ["#7C3AED", "#06B6D4", "#F97316", "#A855F7", "#EC4899", "#10B981", "#EF4444", "#6366F1"]
 px.defaults.color_discrete_sequence = CHART_COLORS
 
 st.markdown("""
 <style>
-    .brand-masthead {
+    .sidebar-brand {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 1.1rem;
-        margin: 0 0 .7rem;
-        padding: 1rem 1.35rem;
-        overflow: hidden;
-        border: 1px solid rgba(199,210,254,.34);
-        border-radius: 22px;
-        background:
-            radial-gradient(ellipse at 88% 0%, rgba(34,211,238,.32), transparent 36%),
-            linear-gradient(118deg, #111827 0%, #312E81 52%, #0E7490 100%);
-        box-shadow:
-            0 16px 34px rgba(49,46,129,.24),
-            inset 0 1px 0 rgba(255,255,255,.18);
-        color: #fff;
+        gap: .75rem;
+        margin: .2rem 0 1.1rem;
+        padding: .2rem .15rem 1rem;
+        border-bottom: 1px solid rgba(148,163,184,.2);
     }
-    .brand-lockup {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-    .brand-mark {
+    .sidebar-brand-mark {
         display: flex;
         align-items: end;
         gap: 3px;
-        height: 30px;
-        padding: 6px;
-        border: 1px solid rgba(255,255,255,.34);
-        border-radius: 12px;
-        background: linear-gradient(145deg, rgba(103,232,249,.24), rgba(129,140,248,.18));
-        box-shadow:
-            0 8px 18px rgba(8,145,178,.2),
-            inset 0 1px 0 rgba(255,255,255,.2);
+        height: 2.3rem;
+        padding: .48rem;
+        border-radius: 11px;
+        background: linear-gradient(145deg, #7C3AED, #4F46E5);
+        box-shadow: 0 6px 14px rgba(124,58,237,.22);
     }
-    .brand-mark span {
+    .sidebar-brand-mark span {
         display: block;
-        width: 5px;
+        width: 4px;
         border-radius: 4px;
-        background: linear-gradient(180deg, #A5F3FC, #22D3EE);
+        background: linear-gradient(180deg, #C4B5FD, #67E8F9);
     }
-    .brand-mark span:nth-child(1) { height: 10px; }
-    .brand-mark span:nth-child(2) { height: 17px; }
-    .brand-mark span:nth-child(3) { height: 13px; }
-    .brand-name {
-        color: #fff;
-        font-size: 1.72rem;
+    .sidebar-brand-mark span:nth-child(1) { height: 9px; }
+    .sidebar-brand-mark span:nth-child(2) { height: 15px; }
+    .sidebar-brand-mark span:nth-child(3) { height: 11px; }
+    .sidebar-brand-name {
+        display: block;
+        font-size: 1.02rem;
         font-weight: 800;
-        letter-spacing: -.035em;
-        line-height: 1.2;
-        text-shadow: 0 2px 18px rgba(15,23,42,.32);
+        letter-spacing: -.025em;
+        line-height: 1.25;
     }
-    .brand-subtitle {
-        margin-top: .22rem;
-        color: rgba(255,255,255,.82);
-        font-size: .78rem;
-        letter-spacing: .025em;
+    .sidebar-brand-subtitle {
+        display: block;
+        margin-top: .16rem;
+        color: #7C3AED;
+        font-size: .6rem;
+        font-weight: 750;
+        letter-spacing: .11em;
     }
-    .brand-status {
-        padding: .42rem .7rem;
-        border: 1px solid rgba(255,255,255,.28);
-        border-radius: 999px;
-        background: rgba(15,23,42,.18);
-        color: rgba(255,255,255,.94);
-        font-size: .7rem;
+    .sidebar-section-label {
+        margin: .85rem .25rem .35rem;
+        color: #94A3B8;
+        font-size: .64rem;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+    }
+    .topbar-dataset {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        color: inherit;
+        font-size: .72rem;
+        line-height: 1.35;
+    }
+    .topbar-dataset__dot {
+        flex: 0 0 .52rem;
+        width: .52rem;
+        height: .52rem;
+        border-radius: 50%;
+        background: #10B981;
+        box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+    }
+    .topbar-dataset__name {
+        display: block;
         font-weight: 700;
-        letter-spacing: .1em;
-        white-space: nowrap;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+    }
+    .topbar-dataset__detail {
+        display: block;
+        font-size: .66rem;
+        opacity: .68;
     }
     .page-hero {
-        padding: 1.7rem 1.9rem;
-        margin: 0 0 1.15rem;
-        border: 1px solid rgba(255,255,255,.2);
-        border-radius: 22px;
-        background: linear-gradient(118deg, #0B1B3A 0%, #2563EB 56%, #06B6D4 100%);
-        box-shadow: 0 14px 34px rgba(37, 99, 235, .17);
-        color: #fff;
-    }
-    .page-hero__eyebrow {
-        margin-bottom: .45rem;
-        color: rgba(255,255,255,.78);
-        font-size: .72rem;
-        font-weight: 700;
-        letter-spacing: .13em;
-        text-transform: uppercase;
+        padding: .2rem 0 1rem;
+        margin: 0 0 1rem;
+        border-bottom: 1px solid rgba(148,163,184,.22);
     }
     .page-hero h1 {
         margin: 0;
-        color: #fff;
-        font-size: clamp(1.7rem, 3vw, 2.45rem);
-        line-height: 1.14;
+        color: inherit;
+        font-size: clamp(1.55rem, 2.5vw, 2rem);
+        font-weight: 700;
+        letter-spacing: -.03em;
+        line-height: 1.2;
     }
     .page-hero p {
-        max-width: 760px;
-        margin: .65rem 0 0;
-        color: rgba(255,255,255,.88);
-        font-size: 1rem;
-    }
-    .feature-card {
-        min-height: 152px;
-        padding: 1.1rem;
-        border: 1px solid rgba(59,130,246,.2);
-        border-radius: 16px;
-        background: linear-gradient(145deg, rgba(6,182,212,.12), rgba(37,99,235,.08) 58%, rgba(139,92,246,.06));
-    }
-    .feature-card__number {
-        color: #0284C7;
-        font-size: .75rem;
-        font-weight: 700;
-        letter-spacing: .1em;
-    }
-    .feature-card h3 {
-        margin: .5rem 0 .35rem;
-        font-size: 1.05rem;
-    }
-    .feature-card p {
-        margin: 0;
-        font-size: .88rem;
-        opacity: .8;
+        max-width: 800px;
+        margin: .45rem 0 0;
+        color: inherit;
+        font-size: .93rem;
+        line-height: 1.55;
+        opacity: .72;
     }
     .insight-banner {
         margin: .75rem 0;
         padding: .9rem 1rem;
-        border-left: 4px solid #06B6D4;
+        border-left: 4px solid #7C3AED;
         border-radius: 0 12px 12px 0;
-        background: linear-gradient(90deg, rgba(6,182,212,.12), rgba(37,99,235,.05));
+        background: linear-gradient(90deg, rgba(124,58,237,.1), rgba(6,182,212,.05));
+    }
+    .st-key-dashboard-total-employees,
+    .st-key-dashboard-average-salary,
+    .st-key-dashboard-median-salary,
+    .st-key-dashboard-average-experience,
+    [class*="st-key-viz-"],
+    [class*="st-key-card-"] {
+        position: relative;
+        z-index: 0;
+        border-radius: 14px;
+        transform-origin: center;
+        transition: transform 180ms ease, box-shadow 180ms ease;
+    }
+    .st-key-dashboard-total-employees:hover,
+    .st-key-dashboard-average-salary:hover,
+    .st-key-dashboard-median-salary:hover,
+    .st-key-dashboard-average-experience:hover,
+    .st-key-dashboard-total-employees:focus-within,
+    .st-key-dashboard-average-salary:focus-within,
+    .st-key-dashboard-median-salary:focus-within,
+    .st-key-dashboard-average-experience:focus-within,
+    [class*="st-key-viz-"]:hover,
+    [class*="st-key-viz-"]:focus-within,
+    [class*="st-key-card-"]:hover,
+    [class*="st-key-card-"]:focus-within {
+        z-index: 2;
+        transform: translateY(-2px) scale(1.015);
+        box-shadow: 0 8px 20px rgba(124,58,237,.14);
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .st-key-dashboard-total-employees,
+        .st-key-dashboard-average-salary,
+        .st-key-dashboard-median-salary,
+        .st-key-dashboard-average-experience,
+        [class*="st-key-viz-"],
+        [class*="st-key-card-"] {
+            transition: none;
+        }
+        .st-key-dashboard-total-employees:hover,
+        .st-key-dashboard-average-salary:hover,
+        .st-key-dashboard-median-salary:hover,
+        .st-key-dashboard-average-experience:hover,
+        .st-key-dashboard-total-employees:focus-within,
+        .st-key-dashboard-average-salary:focus-within,
+        .st-key-dashboard-median-salary:focus-within,
+        .st-key-dashboard-average-experience:focus-within,
+        [class*="st-key-viz-"]:hover,
+        [class*="st-key-viz-"]:focus-within,
+        [class*="st-key-card-"]:hover,
+        [class*="st-key-card-"]:focus-within {
+            transform: none;
+        }
     }
     .stButton button {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         min-height: 42px;
-        font-size: 0.78rem;
+        font-size: 0.84rem;
+        font-weight: 600;
         line-height: 1.1;
     }
     .stButton button p {
@@ -180,11 +207,31 @@ st.markdown("""
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    [data-testid="stSidebar"] [data-testid="stButton"] button {
+        min-height: 2.55rem;
+        justify-content: flex-start;
+        border-radius: 10px;
+    }
+    [data-testid="stSidebar"] [data-testid="stButton"] button > div {
+        width: 100%;
+        justify-content: flex-start !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stButton"] [data-testid="stMarkdownContainer"] {
+        width: 100%;
+        text-align: left;
+    }
+    [data-testid="stSidebar"] [data-testid="stButton"] button p {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: .6rem;
+        width: 100%;
+        margin: 0;
+        text-align: left;
+    }
     @media (max-width: 640px) {
-        .brand-masthead { padding: .85rem 1rem; border-radius: 18px; }
-        .brand-name { font-size: 1.48rem; }
-        .brand-subtitle { font-size: .72rem; }
-        .brand-status { display: none; }
+        .sidebar-brand { margin-bottom: .75rem; }
+        .page-hero { padding-bottom: .75rem; }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -307,7 +354,7 @@ def fig_theme(fig, title=None):
         plot_bgcolor="rgba(0,0,0,0)",
         colorway=CHART_COLORS,
         margin=dict(l=15, r=15, t=55 if title else 20, b=15),
-        font=dict(family="Arial", size=12, color="#E8EEF8" if dark_mode else "#26384A"),
+        font=dict(family="Inter, sans-serif", size=13, color="#E8EEF8" if dark_mode else "#26384A"),
         legend_title_text="",
         hoverlabel=dict(bgcolor="#16243A" if dark_mode else "#FFFFFF", font_color="#E8EEF8" if dark_mode else "#172033"),
     )
@@ -315,10 +362,10 @@ def fig_theme(fig, title=None):
     fig.update_yaxes(gridcolor=grid_color, zerolinecolor=grid_color, automargin=True)
     return fig
 
-def page_header(title, description, eyebrow="EMPLOYEE ANALYTICS"):
+def page_header(title, description=None):
+    description_html = f"<p>{escape(description)}</p>" if description else ""
     st.markdown(
-        f'<section class="page-hero"><div class="page-hero__eyebrow">{escape(eyebrow)}</div>'
-        f'<h1>{escape(title)}</h1><p>{escape(description)}</p></section>',
+        f'<section class="page-hero"><h1>{escape(title)}</h1>{description_html}</section>',
         unsafe_allow_html=True,
     )
 
@@ -342,12 +389,6 @@ def numeric_range_slider(series, label, key, step):
     )
 
 # ---------- Sidebar ----------
-st.sidebar.caption("Appearance")
-st.sidebar.caption("Choose Light or Dark from the Theme controls in the top-right menu.")
-with st.sidebar.expander("Dataset requirements"):
-    st.caption("Target: Salary")
-    st.caption("Features: Age, Experience, Department, Education, Gender")
-
 navigation_pages = [
     "Dashboard",
     "Data Explorer",
@@ -379,33 +420,33 @@ if st.session_state["active_dashboard_page"] == "Overview":
 if st.session_state["active_dashboard_page"] not in navigation_pages:
     st.session_state["active_dashboard_page"] = "Dashboard"
 
-st.markdown(
-    '<div class="brand-masthead">'
-    '<div class="brand-lockup">'
-    '<span class="brand-mark"><span></span><span></span><span></span></span>'
-    '<div><div class="brand-name">SalaryScope</div>'
-    '<div class="brand-subtitle">People analytics · Salary intelligence</div></div>'
-    '</div><div class="brand-status">WORKFORCE INSIGHTS</div></div>',
+st.sidebar.markdown(
+    '<div class="sidebar-brand">'
+    '<span class="sidebar-brand-mark"><span></span><span></span><span></span></span>'
+    '<div><span class="sidebar-brand-name">SalaryScope</span>'
+    '<span class="sidebar-brand-subtitle">EMPLOYEE ANALYTICS</span></div></div>',
     unsafe_allow_html=True,
 )
-with st.container(border=True):
-    nav_grid = st.columns(len(navigation_pages), gap="small")
-    for index, option in enumerate(navigation_pages):
-        with nav_grid[index]:
-            st.button(
-                navigation_labels[option],
-                key=f"top_navigation_{index}",
-                type="primary" if st.session_state["active_dashboard_page"] == option else "secondary",
-                width="stretch",
-                wrap=False,
-                on_click=select_page,
-                args=(option,),
-            )
+run_button = st.sidebar.button(
+    ":material/refresh: Train / refresh analysis",
+    key="train_refresh_button",
+    type="primary",
+    width="stretch",
+)
+st.sidebar.markdown(
+    '<div class="sidebar-section-label">Workspace</div>',
+    unsafe_allow_html=True,
+)
+for option in navigation_pages:
+    st.sidebar.button(
+        navigation_labels[option],
+        key=f"sidebar_navigation_{option}",
+        type="primary" if st.session_state["active_dashboard_page"] == option else "tertiary",
+        width="stretch",
+        on_click=select_page,
+        args=(option,),
+    )
 page = st.session_state["active_dashboard_page"]
-
-if not DEFAULT_DATASET_PATH.is_file():
-    st.error(f"Employee dataset not found: `{DEFAULT_DATASET_PATH}`.")
-    st.stop()
 
 try:
     df = load_default_dataset(
@@ -437,7 +478,6 @@ with st.sidebar.expander("Model settings", expanded=False):
     random_state = st.number_input("Random state", min_value=0, max_value=9999, value=42, step=1)
     include_salary_cluster = st.checkbox("Include Salary in clustering", value=True,
         help="When enabled, clustering uses salary as one of the input dimensions, as in your earlier experiment.")
-    run_button = st.button("Train / refresh analysis", type="primary", use_container_width=True)
 cluster_k = 2
 
 if "analysis_signature" not in st.session_state:
@@ -477,158 +517,231 @@ sil = st.session_state["silhouette"]
 best_model_name = metrics.sort_values("MAE").iloc[0]["Model"]
 best_model = models[best_model_name]
 
+# ---------- Workspace toolbar ----------
+with st.container(border=True, key="card-workspace-toolbar"):
+    search_icon_col, search_input_col, dataset_col = st.columns(
+        [0.25, 5, 1.75],
+        gap="small",
+        vertical_alignment="center",
+    )
+    search_icon_col.markdown(":material/search:")
+    search_query = search_input_col.text_input(
+        "Search employee records",
+        key="global_employee_search",
+        placeholder="Search employees, IDs, or departments...",
+        label_visibility="collapsed",
+    )
+    dataset_col.markdown(
+        '<div class="topbar-dataset">'
+        '<span class="topbar-dataset__dot"></span>'
+        f'<span><span class="topbar-dataset__name">{escape(DEFAULT_DATASET_PATH.name)}</span>'
+        f'<span class="topbar-dataset__detail">{len(df):,} employee records · ready</span></span>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+if search_query.strip():
+    search_columns = [
+        column
+        for column in ("Name", "EmployeeID", "Department", "Education", "Gender")
+        if column in df.columns
+    ]
+    if not search_columns:
+        st.info("This dataset has no searchable employee identity or category columns.")
+    else:
+        matches_mask = pd.Series(False, index=df.index)
+        for column in search_columns:
+            matches_mask |= df[column].astype("string").str.contains(
+                search_query.strip(),
+                case=False,
+                regex=False,
+                na=False,
+            )
+        search_results = df.loc[matches_mask]
+        result_columns = [
+            column
+            for column in ("EmployeeID", "Name", "Department", "Salary", "Experience")
+            if column in search_results.columns
+        ]
+        with st.container(border=True, key="card-employee-search-results"):
+            st.markdown(f"**Employee search · {len(search_results):,} matches**")
+            if search_results.empty:
+                st.caption("No matches found. Try a name, employee ID, or department.")
+            else:
+                st.dataframe(
+                    search_results[result_columns].head(10),
+                    hide_index=True,
+                    width="stretch",
+                    alt="Employee search results",
+                )
+                if len(search_results) > 10:
+                    st.caption("Showing the first 10 matches.")
+
 # ---------- Pages ----------
 if page == "Dashboard":
-    page_header(
-        "Workforce dashboard",
-        "A live snapshot of salary, team composition, and model performance.",
-        f"DASHBOARD  /  {DEFAULT_DATASET_PATH.name}",
-    )
+    page_header("Workforce dashboard")
     department_options = sorted(df["Department"].fillna("Missing").astype(str).unique().tolist())
-    filter_col, view_col = st.columns([1.5, 1])
-    selected_departments = filter_col.multiselect(
-        "Departments",
-        department_options,
-        default=department_options,
-        key=f"overview_departments_{data_fingerprint}",
-    )
-    salary_view = view_col.selectbox(
-        "Salary chart",
-        ["Salary distribution", "By department", "By experience", "3D salary landscape"],
-        key="overview_salary_view",
-    )
-    overview_df = df[df["Department"].fillna("Missing").astype(str).isin(selected_departments)]
     valid_salary = df["Salary"].dropna()
-    overview_salary = overview_df["Salary"].dropna()
-    st.caption("KPI cards summarize the full employee dataset; the department filter below applies to the charts.")
-    kpi_row_one = st.columns(4)
-    kpi_row_one[0].metric(":material/groups: Total employees", f"{len(df):,}")
-    kpi_row_one[1].metric(":material/payments: Average salary", money(valid_salary.mean()) if len(valid_salary) else "—")
-    kpi_row_one[2].metric(":material/vertical_align_center: Median salary", money(valid_salary.median()) if len(valid_salary) else "—")
-    kpi_row_one[3].metric(":material/arrow_upward: Maximum salary", money(valid_salary.max()) if len(valid_salary) else "—")
-    kpi_row_two = st.columns(4)
-    kpi_row_two[0].metric(":material/arrow_downward: Minimum salary", money(valid_salary.min()) if len(valid_salary) else "—")
     experience = df["Experience"].dropna()
-    kpi_row_two[1].metric(":material/work_history: Average experience", f"{experience.mean():.1f} years" if len(experience) else "—")
-    age = df["Age"].dropna()
-    kpi_row_two[2].metric(":material/person: Average age", f"{age.mean():.1f} years" if len(age) else "—")
-    kpi_row_two[3].metric(":material/apartment: Departments", f"{df['Department'].nunique(dropna=True):,}")
+    metric_columns = st.columns(4, gap="medium")
+    with metric_columns[0]:
+        with st.container(key="dashboard-total-employees"):
+            st.metric(":material/groups: Total employees", f"{len(df):,}", border=True)
+    with metric_columns[1]:
+        with st.container(key="dashboard-average-salary"):
+            st.metric(
+                ":material/payments: Average salary",
+                money(valid_salary.mean()) if len(valid_salary) else "—",
+                border=True,
+            )
+    with metric_columns[2]:
+        with st.container(key="dashboard-median-salary"):
+            st.metric(
+                ":material/vertical_align_center: Median salary",
+                money(valid_salary.median()) if len(valid_salary) else "—",
+                border=True,
+            )
+    with metric_columns[3]:
+        with st.container(key="dashboard-average-experience"):
+            st.metric(
+                ":material/work_history: Avg. experience",
+                f"{experience.mean():.1f} yrs" if len(experience) else "—",
+                border=True,
+            )
+    filter_columns = st.columns(2, gap="small")
+    with filter_columns[0]:
+        selected_departments = st.multiselect(
+            "Departments",
+            department_options,
+            default=department_options,
+            key=f"overview_departments_{data_fingerprint}",
+        )
+    with filter_columns[1]:
+        salary_view = st.selectbox(
+            "Salary chart",
+            ["Salary distribution", "By department", "By experience", "3D salary landscape"],
+            key="overview_salary_view",
+        )
+    overview_df = df[df["Department"].fillna("Missing").astype(str).isin(selected_departments)]
+    overview_salary = overview_df["Salary"].dropna()
     st.subheader("Explore salary patterns")
     if overview_df.empty:
         st.info("Choose at least one department to show overview charts.")
     else:
-        left, right = st.columns([1.35, 1])
-        with left.container(border=True):
-            st.markdown(f"**{salary_view}**")
-            if salary_view == "Salary distribution":
-                fig = px.histogram(
-                    overview_df.dropna(subset=["Salary"]),
-                    x="Salary",
-                    nbins=30,
-                    marginal="violin",
-                    color_discrete_sequence=[CHART_COLORS[0]],
-                    labels={"Salary": "Monthly salary (₹)"},
-                )
-                if not overview_salary.empty:
-                    fig.add_vline(
-                        x=overview_salary.mean(),
-                        line_dash="dash",
-                        line_color=CHART_COLORS[1],
-                        annotation_text="Mean",
+        chart_columns = st.columns(2, gap="medium")
+        with chart_columns[0]:
+            with st.container(border=True, key="viz-dashboard-salary-distribution"):
+                st.markdown(f"**{salary_view}**")
+                if salary_view == "Salary distribution":
+                    fig = px.histogram(
+                        overview_df.dropna(subset=["Salary"]),
+                        x="Salary",
+                        nbins=30,
+                        marginal="violin",
+                        color_discrete_sequence=[CHART_COLORS[0]],
+                        labels={"Salary": "Monthly salary (₹)"},
                     )
-                    fig.add_vline(
-                        x=overview_salary.median(),
-                        line_dash="dot",
-                        line_color=CHART_COLORS[2],
-                        annotation_text="Median",
+                    if not overview_salary.empty:
+                        fig.add_vline(
+                            x=overview_salary.mean(),
+                            line_dash="dash",
+                            line_color=CHART_COLORS[1],
+                            annotation_text="Mean",
+                        )
+                        fig.add_vline(
+                            x=overview_salary.median(),
+                            line_dash="dot",
+                            line_color=CHART_COLORS[2],
+                            annotation_text="Median",
+                        )
+                    fig.update_xaxes(tickprefix="₹", tickformat=",.0f")
+                elif salary_view == "By department":
+                    salary_by_department = (
+                        overview_df.groupby("Department", dropna=False)["Salary"]
+                        .mean().reset_index()
+                    ).dropna(subset=["Salary"]).sort_values("Salary")
+                    fig = px.bar(
+                        salary_by_department,
+                        x="Salary",
+                        y="Department",
+                        orientation="h",
+                        color="Salary",
+                        color_continuous_scale=["#C4B5FD", "#7C3AED", "#312E81"],
+                        text_auto=".2s",
+                        labels={"Salary": "Average monthly salary (₹)"},
                     )
-                fig.update_xaxes(tickprefix="₹", tickformat=",.0f")
-            elif salary_view == "By department":
-                salary_by_department = (
-                    overview_df.groupby("Department", dropna=False)["Salary"]
-                    .mean().reset_index()
-                ).dropna(subset=["Salary"]).sort_values("Salary")
-                fig = px.bar(
-                    salary_by_department,
-                    x="Salary",
-                    y="Department",
-                    orientation="h",
-                    color="Salary",
-                    color_continuous_scale=["#BAE6FD", "#2563EB", "#0B1B3A"],
-                    text_auto=".2s",
-                    labels={"Salary": "Average monthly salary (₹)"},
-                )
-                fig.update_xaxes(tickprefix="₹", tickformat=",.0f")
-            elif salary_view == "By experience":
-                fig = px.scatter(
-                    overview_df.dropna(subset=["Experience", "Salary"]),
-                    x="Experience",
-                    y="Salary",
-                    color="Department",
-                    hover_data=["Age", "Education"],
-                    opacity=0.78,
-                    render_mode="webgl",
-                    labels={
-                        "Experience": "Experience (years)",
-                        "Salary": "Monthly salary (₹)",
-                    },
-                )
-                fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
-            else:
-                plot_df = overview_df.dropna(
-                    subset=["Age", "Experience", "Salary"]
-                )
-                if len(plot_df) > 5000:
-                    plot_df = plot_df.sample(5000, random_state=42)
-                    st.caption("Showing a deterministic 5,000-record sample for responsive 3D rendering.")
-                fig = px.scatter_3d(
-                    plot_df,
-                    x="Age",
-                    y="Experience",
-                    z="Salary",
-                    color="Department",
-                    hover_data=["Education", "Gender"],
-                    opacity=0.78,
-                    labels={
-                        "Age": "Age (years)",
-                        "Experience": "Experience (years)",
-                        "Salary": "Monthly salary (₹)",
-                    },
-                )
-                fig.update_traces(marker=dict(size=4))
-                fig.update_layout(
-                    scene=dict(
-                        xaxis_title="Age (years)",
-                        yaxis_title="Experience (years)",
-                        zaxis_title="Monthly salary (₹)",
+                    fig.update_xaxes(tickprefix="₹", tickformat=",.0f")
+                elif salary_view == "By experience":
+                    fig = px.scatter(
+                        overview_df.dropna(subset=["Experience", "Salary"]),
+                        x="Experience",
+                        y="Salary",
+                        color="Department",
+                        hover_data=["Age", "Education"],
+                        opacity=0.78,
+                        render_mode="webgl",
+                        labels={
+                            "Experience": "Experience (years)",
+                            "Salary": "Monthly salary (₹)",
+                        },
                     )
+                    fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
+                else:
+                    plot_df = overview_df.dropna(
+                        subset=["Age", "Experience", "Salary"]
+                    )
+                    if len(plot_df) > 5000:
+                        plot_df = plot_df.sample(5000, random_state=42)
+                        st.caption("Showing a deterministic 5,000-record sample for responsive 3D rendering.")
+                    fig = px.scatter_3d(
+                        plot_df,
+                        x="Age",
+                        y="Experience",
+                        z="Salary",
+                        color="Department",
+                        hover_data=["Education", "Gender"],
+                        opacity=0.78,
+                        labels={
+                            "Age": "Age (years)",
+                            "Experience": "Experience (years)",
+                            "Salary": "Monthly salary (₹)",
+                        },
+                    )
+                    fig.update_traces(marker=dict(size=4))
+                    fig.update_layout(
+                        scene=dict(
+                            xaxis_title="Age (years)",
+                            yaxis_title="Experience (years)",
+                            zaxis_title="Monthly salary (₹)",
+                        )
+                    )
+                st.plotly_chart(fig_theme(fig), use_container_width=True)
+        with chart_columns[1]:
+            with st.container(border=True, key="viz-dashboard-team-composition"):
+                st.markdown("**Team composition**")
+                counts = (
+                    overview_df["Department"].fillna("Missing")
+                    .value_counts().rename_axis("Department")
+                    .reset_index(name="Employees")
                 )
-            st.plotly_chart(fig_theme(fig), use_container_width=True)
-        with right.container(border=True):
-            st.markdown("**Team composition**")
-            counts = (
-                overview_df["Department"].fillna("Missing")
-                .value_counts().rename_axis("Department")
-                .reset_index(name="Employees")
-            )
-            fig = px.pie(
-                counts,
-                names="Department",
-                values="Employees",
-                hole=0.66,
-                color_discrete_sequence=CHART_COLORS,
-            )
-            fig.update_traces(textposition="inside", textinfo="percent")
-            fig.add_annotation(
-                text=f"<b>{len(overview_df):,}</b><br>employees",
-                x=0.5,
-                y=0.5,
-                xref="paper",
-                yref="paper",
-                showarrow=False,
-                font=dict(size=16, color="#E8EEF8" if is_dark_mode() else "#26384A"),
-            )
-            st.plotly_chart(fig_theme(fig), use_container_width=True)
+                fig = px.pie(
+                    counts,
+                    names="Department",
+                    values="Employees",
+                    hole=0.66,
+                    color_discrete_sequence=CHART_COLORS,
+                )
+                fig.update_traces(textposition="inside", textinfo="percent")
+                fig.add_annotation(
+                    text=f"<b>{len(overview_df):,}</b><br>employees",
+                    x=0.5,
+                    y=0.5,
+                    xref="paper",
+                    yref="paper",
+                    showarrow=False,
+                    font=dict(size=16, color="#E8EEF8" if is_dark_mode() else "#26384A"),
+                )
+                st.plotly_chart(fig_theme(fig), use_container_width=True)
     st.subheader("Model snapshot")
     snapshot = metrics.sort_values("MAE").copy()
     st.dataframe(
@@ -641,36 +754,34 @@ if page == "Dashboard":
         use_container_width=True,
         hide_index=True,
     )
-    st.caption(f"Best model by MAE on this run: {best_model_name}. This is a relative comparison, not a guarantee of accurate salary prediction.")
+    st.caption(
+        f"Lowest test MAE: {best_model_name} ({money(metrics['MAE'].min())}). "
+        "Treat results as exploratory."
+    )
 
 elif page == "Data Explorer":
-    page_header(
-        "Exploratory data analysis",
-        "Compare salary and workforce patterns with interactive filters and linked visual views.",
-    )
+    page_header("Exploratory data analysis")
     department_options = sorted(df["Department"].fillna("Missing").astype(str).unique().tolist())
     gender_options = sorted(df["Gender"].fillna("Missing").astype(str).unique().tolist())
     education_options = sorted(df["Education"].fillna("Missing").astype(str).unique().tolist())
     st.markdown("#### Focus the analysis")
-    filter_row_one = st.columns(3)
-    selected_departments = filter_row_one[0].multiselect(
-        "Department", department_options, default=department_options,
-        key=f"eda_departments_{data_fingerprint}",
-    )
-    selected_genders = filter_row_one[1].multiselect(
-        "Gender", gender_options, default=gender_options,
-        key=f"eda_genders_{data_fingerprint}",
-    )
-    selected_education = filter_row_one[2].multiselect(
-        "Education level", education_options, default=education_options,
-        key=f"eda_education_{data_fingerprint}",
-    )
-    filter_row_two = st.columns(2)
-    with filter_row_two[0]:
+    with st.grid("auto", min_column_width=240, gap="small"):
+        selected_departments = st.multiselect(
+            "Department", department_options, default=department_options,
+            key=f"eda_departments_{data_fingerprint}",
+        )
+        selected_genders = st.multiselect(
+            "Gender", gender_options, default=gender_options,
+            key=f"eda_genders_{data_fingerprint}",
+        )
+        selected_education = st.multiselect(
+            "Education level", education_options, default=education_options,
+            key=f"eda_education_{data_fingerprint}",
+        )
+    with st.grid("auto", min_column_width=260, gap="small"):
         age_range = numeric_range_slider(
             df["Age"], "Age range (years)", f"eda_age_{data_fingerprint}", 1.0
         )
-    with filter_row_two[1]:
         experience_range = numeric_range_slider(
             df["Experience"], "Experience range (years)",
             f"eda_experience_{data_fingerprint}", 0.5,
@@ -715,7 +826,7 @@ elif page == "Data Explorer":
         with compensation_tab:
             salary_records = filtered.dropna(subset=["Salary"]).copy()
             histogram_col, salary_box_col = st.columns(2)
-            with histogram_col.container(border=True):
+            with histogram_col.container(border=True, key="viz-eda-salary-distribution"):
                 st.markdown("**Salary distribution**")
                 if salary_records.empty:
                     st.info("No numeric salary values match these filters.")
@@ -730,7 +841,7 @@ elif page == "Data Explorer":
                     )
                     fig.update_xaxes(tickprefix="₹", tickformat=",.0f")
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
-            with salary_box_col.container(border=True):
+            with salary_box_col.container(border=True, key="viz-eda-salary-spread"):
                 st.markdown("**Salary spread and outliers**")
                 if salary_records.empty:
                     st.info("No numeric salary values match these filters.")
@@ -760,7 +871,7 @@ elif page == "Data Explorer":
                 )
             )
             dept_col, education_col = st.columns(2)
-            with dept_col.container(border=True):
+            with dept_col.container(border=True, key="viz-eda-department-salary"):
                 st.markdown("**Salary by department**")
                 if department_salary.empty:
                     st.info("No department salary values match these filters.")
@@ -777,7 +888,7 @@ elif page == "Data Explorer":
                     )
                     fig.update_xaxes(tickprefix="₹", tickformat=",.0f")
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
-            with education_col.container(border=True):
+            with education_col.container(border=True, key="viz-eda-education-salary"):
                 st.markdown("**Salary by education level**")
                 education_salary = salary_records.assign(
                     Education=salary_records["Education"].fillna("Missing").astype(str)
@@ -796,7 +907,7 @@ elif page == "Data Explorer":
                     )
                     fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
-            with st.container(border=True):
+            with st.container(border=True, key="viz-eda-gender-salary"):
                 st.markdown("**Salary by gender**")
                 gender_salary = salary_records.assign(
                     Gender=salary_records["Gender"].fillna("Missing").astype(str)
@@ -817,7 +928,7 @@ elif page == "Data Explorer":
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
         with workforce_tab:
             age_salary_col, experience_salary_col = st.columns(2)
-            with age_salary_col.container(border=True):
+            with age_salary_col.container(border=True, key="viz-eda-age-salary"):
                 st.markdown("**Age vs. salary**")
                 age_salary = filtered.dropna(subset=["Age", "Salary"])
                 if age_salary.empty:
@@ -835,7 +946,7 @@ elif page == "Data Explorer":
                     )
                     fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
-            with experience_salary_col.container(border=True):
+            with experience_salary_col.container(border=True, key="viz-eda-experience-salary"):
                 st.markdown("**Experience vs. salary**")
                 experience_salary = filtered.dropna(
                     subset=["Experience", "Salary"]
@@ -860,7 +971,7 @@ elif page == "Data Explorer":
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
 
             density_col, department_count_col = st.columns(2)
-            with density_col.container(border=True):
+            with density_col.container(border=True, key="viz-eda-age-experience-density"):
                 st.markdown("**Age vs. experience distribution**")
                 age_experience = filtered.dropna(subset=["Age", "Experience"])
                 if age_experience.empty:
@@ -872,11 +983,11 @@ elif page == "Data Explorer":
                         y="Experience",
                         nbinsx=20,
                         nbinsy=20,
-                        color_continuous_scale=["#DBEAFE", "#2563EB", "#0B1B3A"],
+                        color_continuous_scale=["#EDE9FE", "#7C3AED", "#312E81"],
                         labels={"Age": "Age (years)", "Experience": "Experience (years)"},
                     )
                     st.plotly_chart(fig_theme(fig), use_container_width=True)
-            with department_count_col.container(border=True):
+            with department_count_col.container(border=True, key="viz-eda-department-count"):
                 st.markdown("**Employees by department**")
                 department_counts = (
                     filtered["Department"].fillna("Missing").astype(str)
@@ -895,7 +1006,7 @@ elif page == "Data Explorer":
                 fig.update_traces(textposition="outside", cliponaxis=False)
                 st.plotly_chart(fig_theme(fig), use_container_width=True)
 
-            with st.container(border=True):
+            with st.container(border=True, key="viz-eda-correlation"):
                 st.markdown("**Numeric feature correlation**")
                 numeric_data = filtered[["Age", "Experience", "Salary"]]
                 numeric_data = numeric_data.dropna(axis=1, how="all")
@@ -910,10 +1021,13 @@ elif page == "Data Explorer":
                         text_auto=".2f",
                         zmin=-1,
                         zmax=1,
-                        color_continuous_scale=["#EF4444", "#F8FAFC", "#2563EB"],
+                        color_continuous_scale=["#EF4444", "#F8FAFC", "#7C3AED"],
                         labels={"color": "Correlation"},
                     )
-                    st.plotly_chart(fig_theme(fig), use_container_width=True)
+                    st.plotly_chart(
+                        fig_theme(fig),
+                        use_container_width=True,
+                    )
         with three_d_tab:
             st.markdown("**Rotate, zoom, and hover to inspect the salary landscape.**")
             plot_3d = filtered.dropna(
@@ -947,7 +1061,11 @@ elif page == "Data Explorer":
                         zaxis_title="Monthly salary (₹)",
                     )
                 )
-                st.plotly_chart(fig_theme(fig), use_container_width=True)
+                st.plotly_chart(
+                    fig_theme(fig),
+                    use_container_width=True,
+                    key="viz-eda-salary-landscape",
+                )
 
     with st.expander("Filtered employee records"):
         table_search = st.text_input("Search employee records", key=f"eda_search_{data_fingerprint}")
@@ -970,8 +1088,7 @@ elif page == "Data Explorer":
 
 elif page == "Statistical Analysis":
     page_header(
-        "Statistical analysis",
-        "Explore correlations and test salary differences across employee groups.",
+        "Statistical analysis"
     )
     correlation_tab, group_test_tab = st.tabs(
         ["Correlation analysis", "Salary group tests"]
@@ -1014,12 +1131,13 @@ elif page == "Statistical Analysis":
                 text_auto=".2f",
                 zmin=-1,
                 zmax=1,
-                color_continuous_scale=["#EF4444", "#F8FAFC", "#2563EB"],
+                color_continuous_scale=["#EF4444", "#F8FAFC", "#7C3AED"],
                 labels={"color": "Correlation"},
             )
             st.plotly_chart(
                 fig_theme(matrix_figure),
                 alt=f"{method} correlation matrix for age, experience, and salary",
+                key="viz-statistics-correlation-matrix",
             )
 
             st.markdown("#### Test a selected variable pair")
@@ -1057,18 +1175,27 @@ elif page == "Statistical Analysis":
             except ValueError as error:
                 st.info(f"Correlation is unavailable: {error}")
             else:
-                result_columns = st.columns(3)
                 coefficient_label = "Pearson r" if method == "Pearson" else "Spearman ρ"
-                result_columns[0].metric(
-                    coefficient_label,
-                    f"{correlation_result.coefficient:.3f}",
-                )
-                result_columns[1].metric(
-                    "p-value",
-                    "<0.001" if correlation_result.p_value < 0.001
-                    else f"{correlation_result.p_value:.3f}",
-                )
-                result_columns[2].metric("Paired records", f"{correlation_result.sample_size:,}")
+                with st.grid("auto", min_column_width=220, gap="medium"):
+                    with st.container(key="card-statistics-correlation-coefficient"):
+                        st.metric(
+                            coefficient_label,
+                            f"{correlation_result.coefficient:.3f}",
+                            border=True,
+                        )
+                    with st.container(key="card-statistics-correlation-pvalue"):
+                        st.metric(
+                            "p-value",
+                            "<0.001" if correlation_result.p_value < 0.001
+                            else f"{correlation_result.p_value:.3f}",
+                            border=True,
+                        )
+                    with st.container(key="card-statistics-correlation-sample"):
+                        st.metric(
+                            "Paired records",
+                            f"{correlation_result.sample_size:,}",
+                            border=True,
+                        )
                 if correlation_result.confidence_interval is not None:
                     lower, upper = correlation_result.confidence_interval
                     st.caption(
@@ -1116,14 +1243,22 @@ elif page == "Statistical Analysis":
                 hide_index=True,
                 alt=f"Salary summaries and confidence intervals by {group_column.lower()}",
             )
-            result_columns = st.columns(3)
-            result_columns[0].metric("Test", group_test.method)
-            result_columns[1].metric("Test statistic", f"{group_test.statistic:.3f}")
-            result_columns[2].metric(
-                "p-value",
-                "<0.001" if group_test.p_value < 0.001
-                else f"{group_test.p_value:.3f}",
-            )
+            with st.grid("auto", min_column_width=220, gap="medium"):
+                with st.container(key="card-statistics-test-name"):
+                    st.metric("Test", group_test.method, border=True)
+                with st.container(key="card-statistics-test-statistic"):
+                    st.metric(
+                        "Test statistic",
+                        f"{group_test.statistic:.3f}",
+                        border=True,
+                    )
+                with st.container(key="card-statistics-test-pvalue"):
+                    st.metric(
+                        "p-value",
+                        "<0.001" if group_test.p_value < 0.001
+                        else f"{group_test.p_value:.3f}",
+                        border=True,
+                    )
             alpha = 1 - confidence_percent / 100
             st.caption(
                 f"{group_test.sample_size:,} complete records across "
@@ -1167,7 +1302,7 @@ elif page == "Statistical Analysis":
 elif page == "Preprocessing":
     page_header(
         "Data preparation",
-        "Trace the actual input data through quality checks, feature processing, and the model split.",
+        "Review dataset quality, outliers, and the transformations used by the fitted models.",
     )
     modeling_rows = len(st.session_state["modelling_df"])
     test_rows = len(st.session_state["y_test"])
@@ -1186,42 +1321,22 @@ elif page == "Preprocessing":
     missing_cells = int(df.isna().sum().sum())
     quality_score = 100 * (1 - missing_cells / max(df.size, 1))
 
-    metric_row = st.columns(4)
-    metric_row[0].metric("Dataset rows", f"{len(df):,}")
-    metric_row[1].metric("Rows with usable salary", f"{modeling_rows:,}")
-    metric_row[2].metric("Training / test rows", f"{train_rows:,} / {test_rows:,}")
-    metric_row[3].metric("Encoded feature columns", f"{transformed_shape[1]:,}")
-    st.caption(
-        f"{len(df) - modeling_rows:,} rows with missing/non-numeric salary were excluded "
-        "from regression training. Feature missing values are imputed within each fitted model pipeline."
-    )
-
-    st.subheader("Preprocessing workflow")
-    workflow = st.columns(4)
-    workflow_cards = [
-        ("01", "Inspect", "Original employee rows, missing fields, and exact duplicate count."),
-        ("02", "Split", f"{train_rows:,} training rows and {test_rows:,} held-out test rows."),
-        ("03", "Transform", "Numeric features: median imputation and standard scaling. Categorical features: most-frequent imputation and one-hot encoding."),
-        ("04", "Fit", "Each model fits its own preprocessing pipeline on training data; unknown categories are ignored at prediction time."),
-    ]
-    for column, (number, title, description) in zip(workflow, workflow_cards):
-        column.markdown(
-            f'<div class="feature-card"><div class="feature-card__number">{number} / PIPELINE</div>'
-            f'<h3>{title}</h3><p>{escape(description)}</p></div>',
-            unsafe_allow_html=True,
-        )
-    st.caption(
-        "This view reports the current employee dataset and fitted pipeline. Duplicate and IQR-flagged rows "
-        "are measured for review; the existing training pipeline does not automatically delete them."
-    )
-
+    with st.grid("auto", min_column_width=220, gap="medium"):
+        with st.container(key="card-preprocessing-dataset-rows"):
+            st.metric("Dataset rows", f"{len(df):,}", border=True)
+        with st.container(key="card-preprocessing-usable-salary"):
+            st.metric("Rows with usable salary", f"{modeling_rows:,}", border=True)
+        with st.container(key="card-preprocessing-train-test"):
+            st.metric("Training / test rows", f"{train_rows:,} / {test_rows:,}", border=True)
+        with st.container(key="card-preprocessing-encoded-features"):
+            st.metric("Encoded feature columns", f"{transformed_shape[1]:,}", border=True)
     missing_by_column = pd.DataFrame({
         "Column": df.columns,
         "Missing values": [int(df[column].isna().sum()) for column in df.columns],
         "Missing (%)": [float(df[column].isna().mean() * 100) for column in df.columns],
     }).sort_values("Missing (%)", ascending=False)
     missing_col, duplicate_col = st.columns([1.3, 1])
-    with missing_col.container(border=True):
+    with missing_col.container(border=True, key="viz-preprocessing-missing-values"):
         st.markdown("**Missing values before model preprocessing**")
         if missing_cells == 0:
             st.success("No missing cells found in the employee dataset.")
@@ -1232,13 +1347,13 @@ elif page == "Preprocessing":
                 y="Column",
                 orientation="h",
                 color="Missing (%)",
-                color_continuous_scale=["#BAE6FD", "#2563EB", "#0B1B3A"],
+                color_continuous_scale=["#EDE9FE", "#7C3AED", "#312E81"],
                 text_auto=".1f",
                 labels={"Missing (%)": "Missing values (%)"},
             )
             st.plotly_chart(fig_theme(fig), use_container_width=True)
         st.caption(f"Raw dataset completeness: {quality_score:.1f}%.")
-    with duplicate_col.container(border=True):
+    with duplicate_col.container(border=True, key="card-preprocessing-duplicates"):
         st.markdown("**Duplicate detection**")
         st.metric("Exact duplicate rows", f"{int(df.duplicated().sum()):,}")
         st.write(
@@ -1269,7 +1384,7 @@ elif page == "Preprocessing":
         })
     outlier_summary = pd.DataFrame(outlier_rows)
     outlier_left, outlier_right = st.columns([1, 1.2])
-    with outlier_left.container(border=True):
+    with outlier_left.container(border=True, key="card-preprocessing-outlier-table"):
         st.dataframe(
             outlier_summary.style.format({
                 "IQR lower bound": "{:,.2f}",
@@ -1279,7 +1394,7 @@ elif page == "Preprocessing":
             hide_index=True,
         )
         st.caption("IQR flags use Q1 − 1.5×IQR and Q3 + 1.5×IQR; flagged records remain in the analysis.")
-    with outlier_right.container(border=True):
+    with outlier_right.container(border=True, key="viz-preprocessing-outlier-review"):
         plot_outliers = outlier_summary.copy()
         fig = px.bar(
             plot_outliers,
@@ -1304,7 +1419,7 @@ elif page == "Preprocessing":
         "Encoded columns": [len(categories) for categories in encoder.categories_],
     })
     transform_col, category_col = st.columns([1, 1.3])
-    with transform_col.container(border=True):
+    with transform_col.container(border=True, key="card-preprocessing-numeric-transform"):
         st.markdown("**Numerical feature processing**")
         numeric_feature_text = ", ".join(numeric_columns) if numeric_columns else "No numeric features"
         st.write(f"{numeric_feature_text} → median imputation → StandardScaler.")
@@ -1313,7 +1428,7 @@ elif page == "Preprocessing":
         categorical_feature_text = ", ".join(categorical_columns) if categorical_columns else "No categorical features"
         st.write(f"{categorical_feature_text} → most-frequent imputation → one-hot encoding.")
         st.metric("Transformed feature matrix", f"{transformed_shape[0]:,} rows × {transformed_shape[1]:,} columns")
-    with category_col.container(border=True):
+    with category_col.container(border=True, key="card-preprocessing-categories"):
         st.markdown("**One-hot categories learned from training data**")
         st.dataframe(category_summary, use_container_width=True, hide_index=True)
 
@@ -1321,9 +1436,9 @@ elif page == "Preprocessing":
         st.dataframe(df.head(20), use_container_width=True, hide_index=True)
 
 elif page == "Salary Predictor":
-    page_header("Salary prediction", "Estimate monthly salary with a model trained on the employee dataset.")
+    page_header("Salary prediction")
     selected_model = st.selectbox("Prediction model", list(models.keys()), index=list(models.keys()).index(best_model_name))
-    with st.container(border=True):
+    with st.container(border=True, key="card-predictor-profile"):
         st.markdown("**Build an employee profile**")
         st.caption("Choose the closest profile values, then estimate monthly pay.")
         with st.form("prediction_form"):
@@ -1344,7 +1459,7 @@ elif page == "Salary Predictor":
             "Education": education, "Gender": gender
         }])
         value = float(models[selected_model].predict(sample)[0])
-        with st.container(border=True):
+        with st.container(border=True, key="viz-predictor-estimate"):
             st.markdown("#### Estimated monthly salary")
             st.metric("Model estimate", money(value))
             st.markdown("**Input employee profile**")
@@ -1384,13 +1499,19 @@ elif page == "Salary Predictor":
             st.plotly_chart(fig_theme(fig), use_container_width=True)
     st.subheader("Prediction reliability")
     chosen = metrics[metrics["Model"] == selected_model].iloc[0]
-    r1,r2,r3 = st.columns(3)
-    r1.metric("Test MAE", money(chosen["MAE"]))
-    r2.metric("Test RMSE", money(chosen["RMSE"]))
-    r3.metric("Test R²", r2_value(chosen["R² Score"]))
+    with st.grid("auto", min_column_width=220, gap="medium"):
+        with st.container(key="card-predictor-mae"):
+            st.metric("Test MAE", money(chosen["MAE"]), border=True)
+        with st.container(key="card-predictor-rmse"):
+            st.metric("Test RMSE", money(chosen["RMSE"]), border=True)
+        with st.container(key="card-predictor-r2"):
+            st.metric("Test R²", r2_value(chosen["R² Score"]), border=True)
     if chosen["R² Score"] < 0:
-        st.warning("This model has a negative R² score on the current test split. It performed worse than predicting the test-set mean. Treat individual predictions as experimental only.")
-    with st.container(border=True):
+        st.warning(
+            "Negative R²: this model underperforms the test-set mean. "
+            "Treat estimates as exploratory."
+        )
+    with st.container(border=True, key="viz-predictor-error-comparison"):
         st.markdown("**Compare test-set error**")
         error_comparison = metrics.sort_values("MAE")
         fig = px.bar(
@@ -1407,16 +1528,23 @@ elif page == "Salary Predictor":
 elif page == "Pattern":
     page_header(
         "Employee cluster analysis",
-        "Explore K-Means segments using observed employee profiles, salary distributions, and interactive 3D views.",
+        "Compare employee groups across demographics, experience, and salary.",
     )
     cluster_count = clustered["Cluster"].nunique()
     st.caption(
         f"K = {cluster_count} · Features used: {', '.join(st.session_state['cluster_features'])}"
     )
-    metric_row = st.columns(3)
-    metric_row[0].metric("Clustered employees", f"{len(clustered):,}")
-    metric_row[1].metric("Silhouette score", f"{sil:.3f}" if sil is not None else "Not available")
-    metric_row[2].metric("Clusters", f"{cluster_count:,}")
+    with st.grid("auto", min_column_width=220, gap="medium"):
+        with st.container(key="card-pattern-employees"):
+            st.metric("Clustered employees", f"{len(clustered):,}", border=True)
+        with st.container(key="card-pattern-silhouette"):
+            st.metric(
+                "Silhouette score",
+                f"{sil:.3f}" if sil is not None else "Not available",
+                border=True,
+            )
+        with st.container(key="card-pattern-cluster-count"):
+            st.metric("Clusters", f"{cluster_count:,}", border=True)
     if sil is not None and sil < 0.25:
         st.warning(
             "The silhouette score suggests weak separation. Treat these groups as exploratory "
@@ -1433,7 +1561,7 @@ elif page == "Pattern":
     )
     sizes["Cluster label"] = sizes["Cluster"].map(lambda value: f"Cluster {value}")
     distribution_col, map_col = st.columns([0.85, 1.5])
-    with distribution_col.container(border=True):
+    with distribution_col.container(border=True, key="viz-clusters-distribution"):
         st.markdown("**Cluster distribution**")
         fig = px.pie(
             sizes,
@@ -1445,7 +1573,7 @@ elif page == "Pattern":
         )
         fig.update_traces(textposition="inside", textinfo="label+value+percent")
         st.plotly_chart(fig_theme(fig), use_container_width=True)
-    with map_col.container(border=True):
+    with map_col.container(border=True, key="viz-clusters-map"):
         st.markdown("**Employee map**")
         map_view = st.radio(
             "Choose a view",
@@ -1531,7 +1659,7 @@ elif page == "Pattern":
     })
     st.subheader("Cluster profiles")
     profile_table_col, salary_plot_col = st.columns([1.2, 1])
-    with profile_table_col.container(border=True):
+    with profile_table_col.container(border=True, key="card-pattern-profile-table"):
         st.dataframe(
             profile_display.style.format({
                 "Average age": "{:.1f}",
@@ -1544,7 +1672,7 @@ elif page == "Pattern":
             use_container_width=True,
             hide_index=True,
         )
-    with salary_plot_col.container(border=True):
+    with salary_plot_col.container(border=True, key="viz-clusters-salary-profile"):
         st.markdown("**Salary distribution by cluster**")
         salary_profile = clustered.dropna(subset=["Salary"]).copy()
         salary_profile["Cluster label"] = salary_profile["Cluster"].map(
@@ -1565,26 +1693,29 @@ elif page == "Pattern":
             )
             fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
             st.plotly_chart(fig_theme(fig), use_container_width=True)
-    st.markdown("**Observed cluster characteristics**")
+    st.subheader("Observed cluster characteristics")
     category_descriptions = {
         "Department": "most common department",
         "Education": "most common education level",
         "Gender": "most common gender",
     }
-    for _, row in profile.iterrows():
-        members = clustered[clustered["Cluster"] == row["Cluster"]]
-        characteristics = [f"{int(row['Employees']):,} employees"]
-        if pd.notna(row["Mean_age"]):
-            characteristics.append(f"average age {row['Mean_age']:.1f} years")
-        if pd.notna(row["Mean_experience"]):
-            characteristics.append(f"average experience {row['Mean_experience']:.1f} years")
-        if pd.notna(row["Mean_salary"]):
-            characteristics.append(f"average salary {money(row['Mean_salary'])}")
-        for column, description in category_descriptions.items():
-            common_values = members[column].dropna().astype(str).value_counts()
-            if not common_values.empty:
-                characteristics.append(f"{description}: {common_values.index[0]}")
-        st.write(f"**Cluster {int(row['Cluster'])}:** " + "; ".join(characteristics) + ".")
+    with st.grid("auto", min_column_width=260, gap="medium"):
+        for _, row in profile.iterrows():
+            members = clustered[clustered["Cluster"] == row["Cluster"]]
+            characteristics = [f"{int(row['Employees']):,} employees"]
+            if pd.notna(row["Mean_age"]):
+                characteristics.append(f"Average age: {row['Mean_age']:.1f} years")
+            if pd.notna(row["Mean_experience"]):
+                characteristics.append(f"Average experience: {row['Mean_experience']:.1f} years")
+            if pd.notna(row["Mean_salary"]):
+                characteristics.append(f"Average salary: {money(row['Mean_salary'])}")
+            for column, description in category_descriptions.items():
+                common_values = members[column].dropna().astype(str).value_counts()
+                if not common_values.empty:
+                    characteristics.append(f"{description.capitalize()}: {common_values.index[0]}")
+            with st.container(border=True, key=f"card-pattern-profile-{int(row['Cluster'])}"):
+                st.markdown(f"**Cluster {int(row['Cluster'])}**")
+                st.caption(" · ".join(characteristics))
     salary_means = profile.dropna(subset=["Mean_salary"])
     if len(salary_means) >= 2:
         high_cluster = int(salary_means.loc[salary_means["Mean_salary"].idxmax(), "Cluster"])
@@ -1598,7 +1729,7 @@ elif page == "Pattern":
             "be described as salary tiers without considering the full profile."
         )
     composition_col, profile_distribution_col = st.columns([1.1, 1])
-    with composition_col.container(border=True):
+    with composition_col.container(border=True, key="viz-clusters-workforce-mix"):
         st.markdown("**Workforce mix by cluster**")
         category_choice = st.selectbox(
             "Compare category",
@@ -1626,7 +1757,7 @@ elif page == "Pattern":
         fig.update_layout(barnorm="percent")
         fig.update_yaxes(ticksuffix="%")
         st.plotly_chart(fig_theme(fig), use_container_width=True)
-    with profile_distribution_col.container(border=True):
+    with profile_distribution_col.container(border=True, key="viz-clusters-profile-distribution"):
         st.markdown("**Choose a profile distribution**")
         profile_metric = st.selectbox(
             "Profile field",
@@ -1670,8 +1801,7 @@ elif page == "Pattern":
 
 elif page == "Smart Insights":
     page_header(
-        "Business insights",
-        "Automatically surface workforce observations from the current employee dataset.",
+        "Business insights"  
     )
     department_data = df.assign(
         Department=df["Department"].fillna("Missing").astype(str)
@@ -1712,27 +1842,35 @@ elif page == "Smart Insights":
         if not np.isfinite(experience_correlation):
             experience_correlation = None
 
-    insights_row = st.columns(4)
-    insights_row[0].metric(
-        "Highest mean salary",
-        str(highest_department["Department"]) if highest_department is not None else "Not available",
-        money(highest_department["Mean_salary"]) if highest_department is not None else None,
-    )
-    insights_row[1].metric(
-        "Lowest mean salary",
-        str(lowest_department["Department"]) if lowest_department is not None else "Not available",
-        money(lowest_department["Mean_salary"]) if lowest_department is not None else None,
-    )
-    insights_row[2].metric(
-        "Most employees",
-        str(most_populous["Department"]) if most_populous is not None else "Not available",
-        f"{int(most_populous['Employees']):,} records" if most_populous is not None else None,
-    )
-    insights_row[3].metric(
-        "Experience / salary correlation",
-        f"{experience_correlation:.2f}" if experience_correlation is not None else "Not available",
-        "Pearson r; association only",
-    )
+    with st.grid("auto", min_column_width=220, gap="medium"):
+        with st.container(key="card-insight-highest-salary"):
+            st.metric(
+                "Highest mean salary",
+                str(highest_department["Department"]) if highest_department is not None else "Not available",
+                money(highest_department["Mean_salary"]) if highest_department is not None else None,
+                border=True,
+            )
+        with st.container(key="card-insight-lowest-salary"):
+            st.metric(
+                "Lowest mean salary",
+                str(lowest_department["Department"]) if lowest_department is not None else "Not available",
+                money(lowest_department["Mean_salary"]) if lowest_department is not None else None,
+                border=True,
+            )
+        with st.container(key="card-insight-most-employees"):
+            st.metric(
+                "Most employees",
+                str(most_populous["Department"]) if most_populous is not None else "Not available",
+                f"{int(most_populous['Employees']):,} records" if most_populous is not None else None,
+                border=True,
+            )
+        with st.container(key="card-insight-correlation"):
+            st.metric(
+                "Experience / salary correlation",
+                f"{experience_correlation:.2f}" if experience_correlation is not None else "Not available",
+                "Pearson r; association only",
+                border=True,
+            )
 
     generated_insights = []
     if highest_department is not None and lowest_department is not None:
@@ -1763,7 +1901,7 @@ elif page == "Smart Insights":
     st.caption("These are descriptive statistics for employee records; association does not establish causation.")
 
     department_chart_col, education_chart_col = st.columns(2)
-    with department_chart_col.container(border=True):
+    with department_chart_col.container(border=True, key="viz-insights-department-salary"):
         st.markdown("**Department salary comparison**")
         if valid_department_salary.empty:
             st.info("No numeric salary values are available by department.")
@@ -1790,7 +1928,7 @@ elif page == "Smart Insights":
             )
             fig.update_xaxes(tickprefix="₹", tickformat=",.0f")
             st.plotly_chart(fig_theme(fig), use_container_width=True)
-    with education_chart_col.container(border=True):
+    with education_chart_col.container(border=True, key="viz-insights-education-salary"):
         st.markdown("**Salary differences by education level**")
         education_summary = (
             df.assign(Education=df["Education"].fillna("Missing").astype(str))
@@ -1809,7 +1947,7 @@ elif page == "Smart Insights":
                 y="Education",
                 orientation="h",
                 color="Mean_salary",
-                color_continuous_scale=["#BAE6FD", "#2563EB", "#0B1B3A"],
+                color_continuous_scale=["#EDE9FE", "#7C3AED", "#312E81"],
                 text_auto=".2s",
                 hover_data=["Employees", "Median_salary"],
                 labels={"Mean_salary": "Average monthly salary (₹)"},
@@ -1824,7 +1962,6 @@ elif page == "Smart Insights":
                 f"({money(high_education['Mean_salary'])})."
             )
 
-    st.subheader("Experience and salary relationship")
     if experience_salary.empty:
         st.info("No complete experience and salary records are available.")
     else:
@@ -1867,9 +2004,12 @@ elif page == "Smart Insights":
                 line=dict(color="#F97316", width=3, dash="dash"),
             ))
         fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
-        st.plotly_chart(fig_theme(fig), use_container_width=True)
+        st.plotly_chart(
+            fig_theme(fig),
+            use_container_width=True,
+            key="viz-insights-experience-salary",
+        )
 
-    st.subheader("Discovered cluster differences")
     cluster_summary = clustered.groupby("Cluster").agg(
         Employees=("Cluster", "size"),
         Mean_age=("Age", "mean"),
@@ -1902,10 +2042,15 @@ elif page == "Smart Insights":
             )
 
 elif page == "Model Evaluation":
-    page_header("Model evaluation", "Evaluate the current train/test results before interpreting salary estimates.")
-    st.caption("Lower MAE / RMSE is better. R² closer to 1 is better; a negative score means the model underperformed a mean-only baseline.")
+    page_header(
+        "Model evaluation",
+        "Compare held-out prediction errors and inspect how each model's estimates behave.",
+    )
+    st.caption(
+        "Lower MAE/RMSE is better. R² near 1 is better; negative R² is worse than the mean baseline."
+    )
     metrics_col, error_col = st.columns([1, 1.3])
-    with metrics_col.container(border=True):
+    with metrics_col.container(border=True, key="card-model-scorecard"):
         st.markdown("**Test-set scorecard**")
         evaluation_display = metrics.sort_values("MAE").rename(columns={
             "MAE": "MAE (₹)",
@@ -1928,7 +2073,7 @@ elif page == "Model Evaluation":
             f"Best model by MAE: {best_evaluation['Model']} "
             f"({money(best_evaluation['MAE'])})."
         )
-    with error_col.container(border=True):
+    with error_col.container(border=True, key="viz-model-errors"):
         st.markdown("**Absolute and squared error**")
         error_metrics = metrics.melt(
             id_vars="Model",
@@ -1949,7 +2094,7 @@ elif page == "Model Evaluation":
         fig.update_yaxes(tickprefix="₹", tickformat=",.0f")
         st.plotly_chart(fig_theme(fig), use_container_width=True)
     r2_col, diagnostics_col = st.columns([1, 1.35])
-    with r2_col.container(border=True):
+    with r2_col.container(border=True, key="viz-model-r2"):
         st.markdown("**R² compared with baseline**")
         r2_chart = metrics.sort_values("R² Score").copy()
         fig = px.bar(
@@ -1964,7 +2109,7 @@ elif page == "Model Evaluation":
         )
         fig.add_vline(x=0, line_dash="dash", line_color=CHART_COLORS[2], annotation_text="Mean-only baseline")
         st.plotly_chart(fig_theme(fig), use_container_width=True)
-    with diagnostics_col.container(border=True):
+    with diagnostics_col.container(border=True, key="viz-model-diagnostics"):
         st.markdown("**Prediction diagnostics**")
         chosen_name = st.selectbox("Model to inspect", list(models.keys()))
         y = st.session_state["y_test"]
@@ -1995,7 +2140,7 @@ elif page == "Model Evaluation":
     st.subheader("Residual diagnostics")
     diag["Residual"] = diag["Actual salary"] - diag["Predicted salary"]
     residual_col, spread_col = st.columns(2)
-    with residual_col.container(border=True):
+    with residual_col.container(border=True, key="viz-model-residuals"):
         st.markdown("**Error distribution**")
         fig = px.histogram(
             diag,
@@ -2007,7 +2152,7 @@ elif page == "Model Evaluation":
         fig.add_vline(x=0, line_dash="dash", line_color="#EF4444")
         fig.update_xaxes(tickprefix="₹", tickformat=",.0f")
         st.plotly_chart(fig_theme(fig), use_container_width=True)
-    with spread_col.container(border=True):
+    with spread_col.container(border=True, key="viz-model-residual-spread"):
         st.markdown("**Residuals vs. predicted salary**")
         fig = px.scatter(
             diag,
@@ -2028,7 +2173,6 @@ elif page == "Model Evaluation":
 elif page == "About Project":
     page_header(
         "About this project",
-        "A practical employee salary analytics workflow with transparent, data-derived results.",
     )
     overview_tab, runtime_tab = st.tabs(["Project overview", "Current run"])
     with overview_tab:
@@ -2085,7 +2229,7 @@ elif page == "About Project":
             )
         else:
             st.info("No negative R² values were found in this run's model comparison.")
-    with st.container(border=True):
+    with st.container(border=True, key="card-about-run-locally"):
         st.markdown("**Run locally**")
         st.code(
             ".venv\\Scripts\\python.exe -m pip install -r requirements.txt\n"

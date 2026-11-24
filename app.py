@@ -27,7 +27,7 @@ st.set_page_config(
     page_title="SalaryScope",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 
 EXPECTED = ["Age", "Experience", "Department", "Education", "Gender", "Salary"]
@@ -38,6 +38,9 @@ px.defaults.color_discrete_sequence = CHART_COLORS
 
 st.markdown("""
 <style>
+    body {
+        zoom: 0.9;
+    }
     .sidebar-brand {
         display: flex;
         align-items: center;
@@ -133,6 +136,9 @@ st.markdown("""
         font-size: 1rem;
         line-height: 1.6;
         opacity: .72;
+    }
+    hr {
+        margin: .5rem 0 !important;
     }
     .insight-banner {
         margin: .75rem 0;
@@ -502,12 +508,11 @@ best_model = models[best_model_name]
 
 # ---------- Workspace toolbar ----------
 with st.container(border=True, key="card-workspace-toolbar"):
-    search_icon_col, search_input_col, dataset_col = st.columns(
-        [0.25, 5, 1.75],
+    search_input_col, dataset_col = st.columns(
+        [5, 1.75],
         gap="small",
         vertical_alignment="center",
     )
-    search_icon_col.markdown(":material/search:")
     search_query = search_input_col.text_input(
         "Search employee records",
         key="global_employee_search",
@@ -566,31 +571,28 @@ if page == "Dashboard":
     department_options = sorted(df["Department"].fillna("Missing").astype(str).unique().tolist())
     valid_salary = df["Salary"].dropna()
     experience = df["Experience"].dropna()
-    metric_columns = st.columns(4, gap="medium")
-    with metric_columns[0]:
+    with st.grid(4, min_column_width=160, gap="small"):
         with st.container(key="dashboard-total-employees"):
             st.metric(":material/groups: Total employees", f"{len(df):,}", border=True)
-    with metric_columns[1]:
         with st.container(key="dashboard-average-salary"):
             st.metric(
                 ":material/payments: Average salary",
                 money(valid_salary.mean()) if len(valid_salary) else "—",
                 border=True,
             )
-    with metric_columns[2]:
         with st.container(key="dashboard-median-salary"):
             st.metric(
                 ":material/vertical_align_center: Median salary",
                 money(valid_salary.median()) if len(valid_salary) else "—",
                 border=True,
             )
-    with metric_columns[3]:
         with st.container(key="dashboard-average-experience"):
             st.metric(
                 ":material/work_history: Avg. experience",
                 f"{experience.mean():.1f} yrs" if len(experience) else "—",
                 border=True,
             )
+    st.divider()
     filter_columns = st.columns(2, gap="small")
     with filter_columns[0]:
         selected_departments = st.multiselect(
@@ -611,7 +613,7 @@ if page == "Dashboard":
     if overview_df.empty:
         st.info("Choose at least one department to show overview charts.")
     else:
-        chart_columns = st.columns(2, gap="medium")
+        chart_columns = st.columns(2, gap="small")
         with chart_columns[0]:
             with st.container(border=True, key="viz-dashboard-salary-distribution"):
                 st.markdown(f"**{salary_view}**")
@@ -816,6 +818,7 @@ elif page == "Data Explorer":
         "Median experience",
         f"{experience_values.median():.1f} years" if not experience_values.empty else "—",
     )
+    st.divider()
     st.caption(
         f"From {len(df):,} total records. Rows with missing age or experience remain "
         "included when those ranges are used."
@@ -1179,7 +1182,7 @@ elif page == "Statistical Analysis":
                 st.info(f"Correlation is unavailable: {error}")
             else:
                 coefficient_label = "Pearson r" if method == "Pearson" else "Spearman ρ"
-                with st.grid("auto", min_column_width=220, gap="medium"):
+                with st.grid(3, min_column_width=160, gap="small"):
                     with st.container(key="card-statistics-correlation-coefficient"):
                         st.metric(
                             coefficient_label,
@@ -1199,6 +1202,7 @@ elif page == "Statistical Analysis":
                             f"{correlation_result.sample_size:,}",
                             border=True,
                         )
+                st.divider()
                 if correlation_result.confidence_interval is not None:
                     lower, upper = correlation_result.confidence_interval
                     st.caption(
@@ -1246,7 +1250,7 @@ elif page == "Statistical Analysis":
                 hide_index=True,
                 alt=f"Salary summaries and confidence intervals by {group_column.lower()}",
             )
-            with st.grid("auto", min_column_width=220, gap="medium"):
+            with st.grid(3, min_column_width=220, gap="small"):
                 with st.container(key="card-statistics-test-name"):
                     st.metric("Test", group_test.method, border=True)
                 with st.container(key="card-statistics-test-statistic"):
@@ -1262,6 +1266,7 @@ elif page == "Statistical Analysis":
                         else f"{group_test.p_value:.3f}",
                         border=True,
                     )
+            st.divider()
             alpha = 1 - confidence_percent / 100
             st.caption(
                 f"{group_test.sample_size:,} complete records across "
@@ -1324,7 +1329,7 @@ elif page == "Preprocessing":
     missing_cells = int(df.isna().sum().sum())
     quality_score = 100 * (1 - missing_cells / max(df.size, 1))
 
-    with st.grid("auto", min_column_width=220, gap="medium"):
+    with st.grid(4, min_column_width=200, gap="small"):
         with st.container(key="card-preprocessing-dataset-rows"):
             st.metric("Dataset rows", f"{len(df):,}", border=True)
         with st.container(key="card-preprocessing-usable-salary"):
@@ -1333,6 +1338,7 @@ elif page == "Preprocessing":
             st.metric("Training / test rows", f"{train_rows:,} / {test_rows:,}", border=True)
         with st.container(key="card-preprocessing-encoded-features"):
             st.metric("Encoded feature columns", f"{transformed_shape[1]:,}", border=True)
+    st.divider()
     missing_by_column = pd.DataFrame({
         "Column": df.columns,
         "Missing values": [int(df[column].isna().sum()) for column in df.columns],
@@ -1502,13 +1508,14 @@ elif page == "Salary Predictor":
             st.plotly_chart(fig_theme(fig), use_container_width=True)
     st.subheader("Prediction reliability")
     chosen = metrics[metrics["Model"] == selected_model].iloc[0]
-    with st.grid("auto", min_column_width=220, gap="medium"):
+    with st.grid(3, min_column_width=220, gap="small"):
         with st.container(key="card-predictor-mae"):
             st.metric("Test MAE", money(chosen["MAE"]), border=True)
         with st.container(key="card-predictor-rmse"):
             st.metric("Test RMSE", money(chosen["RMSE"]), border=True)
         with st.container(key="card-predictor-r2"):
             st.metric("Test R²", r2_value(chosen["R² Score"]), border=True)
+    st.divider()
     if chosen["R² Score"] < 0:
         st.warning(
             "Negative R²: this model underperforms the test-set mean. "
@@ -1536,7 +1543,7 @@ elif page == "Pattern":
     st.caption(
         f"K = {cluster_count} · Features used: {', '.join(st.session_state['cluster_features'])}"
     )
-    with st.grid("auto", min_column_width=220, gap="medium"):
+    with st.grid(3, min_column_width=220, gap="small"):
         with st.container(key="card-pattern-employees"):
             st.metric("Clustered employees", f"{len(clustered):,}", border=True)
         with st.container(key="card-pattern-silhouette"):
@@ -1547,6 +1554,7 @@ elif page == "Pattern":
             )
         with st.container(key="card-pattern-cluster-count"):
             st.metric("Clusters", f"{cluster_count:,}", border=True)
+    st.divider()
     if sil is not None and sil < 0.25:
         st.warning(
             "The silhouette score suggests weak separation. Treat these groups as exploratory "
@@ -1844,7 +1852,7 @@ elif page == "Smart Insights":
         if not np.isfinite(experience_correlation):
             experience_correlation = None
 
-    with st.grid("auto", min_column_width=220, gap="medium"):
+    with st.grid(4, min_column_width=200, gap="small"):
         with st.container(key="card-insight-highest-salary"):
             st.metric(
                 "Highest mean salary",
@@ -1874,6 +1882,7 @@ elif page == "Smart Insights":
                 border=True,
             )
 
+    st.divider()
     generated_insights = []
     if highest_department is not None and lowest_department is not None:
         salary_gap = float(

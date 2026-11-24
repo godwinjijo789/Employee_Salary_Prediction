@@ -130,8 +130,8 @@ st.markdown("""
         max-width: 800px;
         margin: .45rem 0 0;
         color: inherit;
-        font-size: .93rem;
-        line-height: 1.55;
+        font-size: 1rem;
+        line-height: 1.6;
         opacity: .72;
     }
     .insight-banner {
@@ -147,11 +147,8 @@ st.markdown("""
     .st-key-dashboard-average-experience,
     [class*="st-key-viz-"],
     [class*="st-key-card-"] {
-        position: relative;
-        z-index: 0;
         border-radius: 14px;
-        transform-origin: center;
-        transition: transform 180ms ease, box-shadow 180ms ease;
+        transition: box-shadow 180ms ease;
     }
     .st-key-dashboard-total-employees:hover,
     .st-key-dashboard-average-salary:hover,
@@ -165,8 +162,6 @@ st.markdown("""
     [class*="st-key-viz-"]:focus-within,
     [class*="st-key-card-"]:hover,
     [class*="st-key-card-"]:focus-within {
-        z-index: 2;
-        transform: translateY(-2px) scale(1.015);
         box-shadow: 0 8px 20px rgba(124,58,237,.14);
     }
     @media (prefers-reduced-motion: reduce) {
@@ -174,23 +169,11 @@ st.markdown("""
         .st-key-dashboard-average-salary,
         .st-key-dashboard-median-salary,
         .st-key-dashboard-average-experience,
-        [class*="st-key-viz-"],
         [class*="st-key-card-"] {
             transition: none;
         }
-        .st-key-dashboard-total-employees:hover,
-        .st-key-dashboard-average-salary:hover,
-        .st-key-dashboard-median-salary:hover,
-        .st-key-dashboard-average-experience:hover,
-        .st-key-dashboard-total-employees:focus-within,
-        .st-key-dashboard-average-salary:focus-within,
-        .st-key-dashboard-median-salary:focus-within,
-        .st-key-dashboard-average-experience:focus-within,
-        [class*="st-key-viz-"]:hover,
-        [class*="st-key-viz-"]:focus-within,
-        [class*="st-key-card-"]:hover,
-        [class*="st-key-card-"]:focus-within {
-            transform: none;
+        [class*="st-key-viz-"] {
+            transition: none;
         }
     }
     .stButton button {
@@ -354,7 +337,7 @@ def fig_theme(fig, title=None):
         plot_bgcolor="rgba(0,0,0,0)",
         colorway=CHART_COLORS,
         margin=dict(l=15, r=15, t=55 if title else 20, b=15),
-        font=dict(family="Inter, sans-serif", size=13, color="#E8EEF8" if dark_mode else "#26384A"),
+        font=dict(family="Inter, sans-serif", size=14, color="#E8EEF8" if dark_mode else "#26384A"),
         legend_title_text="",
         hoverlabel=dict(bgcolor="#16243A" if dark_mode else "#FFFFFF", font_color="#E8EEF8" if dark_mode else "#172033"),
     )
@@ -764,41 +747,49 @@ elif page == "Data Explorer":
     department_options = sorted(df["Department"].fillna("Missing").astype(str).unique().tolist())
     gender_options = sorted(df["Gender"].fillna("Missing").astype(str).unique().tolist())
     education_options = sorted(df["Education"].fillna("Missing").astype(str).unique().tolist())
-    st.markdown("#### Focus the analysis")
-    with st.grid("auto", min_column_width=240, gap="small"):
-        selected_departments = st.multiselect(
-            "Department", department_options, default=department_options,
-            key=f"eda_departments_{data_fingerprint}",
+    with st.container(border=True, key="card-eda-filters"):
+        st.subheader("Refine the records", anchor=False)
+        st.caption("Choose categories to narrow the results. Leave a category blank to include all.")
+        with st.grid("auto", min_column_width=240, gap="small"):
+            selected_departments = st.multiselect(
+                "Department", department_options,
+                placeholder="All departments",
+                key=f"eda_departments_{data_fingerprint}",
+            )
+            selected_genders = st.multiselect(
+                "Gender", gender_options,
+                placeholder="All genders",
+                key=f"eda_genders_{data_fingerprint}",
+            )
+            selected_education = st.multiselect(
+                "Education level", education_options,
+                placeholder="All education levels",
+                key=f"eda_education_{data_fingerprint}",
+            )
+        age_col, experience_col = st.columns(2)
+        with age_col:
+            age_range = numeric_range_slider(
+                df["Age"], "Age range (years)", f"eda_age_{data_fingerprint}", 1.0
+            )
+        with experience_col:
+            experience_range = numeric_range_slider(
+                df["Experience"], "Experience range (years)",
+                f"eda_experience_{data_fingerprint}", 0.5,
+            )
+        salary_range = numeric_range_slider(
+            df["Salary"], "Salary range (₹)",
+            f"eda_salary_{data_fingerprint}", 1000.0,
         )
-        selected_genders = st.multiselect(
-            "Gender", gender_options, default=gender_options,
-            key=f"eda_genders_{data_fingerprint}",
-        )
-        selected_education = st.multiselect(
-            "Education level", education_options, default=education_options,
-            key=f"eda_education_{data_fingerprint}",
-        )
-    with st.grid("auto", min_column_width=260, gap="small"):
-        age_range = numeric_range_slider(
-            df["Age"], "Age range (years)", f"eda_age_{data_fingerprint}", 1.0
-        )
-        experience_range = numeric_range_slider(
-            df["Experience"], "Experience range (years)",
-            f"eda_experience_{data_fingerprint}", 0.5,
-        )
-    salary_range = numeric_range_slider(
-        df["Salary"], "Salary range (₹)",
-        f"eda_salary_{data_fingerprint}", 1000.0,
-    )
     filtered = df.copy()
     for column, selected in (
         ("Department", selected_departments),
         ("Gender", selected_genders),
         ("Education", selected_education),
     ):
-        filtered = filtered[
-            filtered[column].fillna("Missing").astype(str).isin(selected)
-        ]
+        if selected:
+            filtered = filtered[
+                filtered[column].fillna("Missing").astype(str).isin(selected)
+            ]
     if age_range is not None:
         filtered = filtered[
             filtered["Age"].between(*age_range) | filtered["Age"].isna()
@@ -813,9 +804,21 @@ elif page == "Data Explorer":
             filtered["Salary"].between(*salary_range)
             | filtered["Salary"].isna()
         ]
+    salary_values = filtered["Salary"].dropna()
+    experience_values = filtered["Experience"].dropna()
+    record_metric, salary_metric, experience_metric = st.columns(3)
+    record_metric.metric("Matching records", f"{len(filtered):,}")
+    salary_metric.metric(
+        "Median monthly salary",
+        money(salary_values.median()) if not salary_values.empty else "—",
+    )
+    experience_metric.metric(
+        "Median experience",
+        f"{experience_values.median():.1f} years" if not experience_values.empty else "—",
+    )
     st.caption(
-        f"Showing **{len(filtered):,}** of {len(df):,} records. "
-        "Rows with missing age or experience remain included when those ranges are used."
+        f"From {len(df):,} total records. Rows with missing age or experience remain "
+        "included when those ranges are used."
     )
     if filtered.empty:
         st.info("No records match these filters. Expand one or more selections to continue.")
@@ -1527,8 +1530,7 @@ elif page == "Salary Predictor":
 
 elif page == "Pattern":
     page_header(
-        "Employee cluster analysis",
-        "Compare employee groups across demographics, experience, and salary.",
+        "Employee cluster analysis"
     )
     cluster_count = clustered["Cluster"].nunique()
     st.caption(

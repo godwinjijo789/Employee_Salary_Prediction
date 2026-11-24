@@ -3,10 +3,10 @@ showWidgetBorder = true
 showSidebarBorder = true
 baseRadius = "12px"
 buttonRadius = "8px"
-font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap"
+headingFont = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap"
 codeFont = "monospace"
-baseFontSize = 16
+baseFontSize = 17
 baseFontWeight = 400
 codeFontSize = "0.875rem"
 codeFontWeight = 400
